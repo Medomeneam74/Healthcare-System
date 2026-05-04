@@ -9,7 +9,7 @@ export interface AuthUser {
   email?: string
   role: Role
   hospitalId?: string
-  specialization?: string
+  department?: string
 }
 
 export interface Patient {
@@ -21,6 +21,7 @@ export interface Patient {
   gender: string
   dateOfBirth: string
   bloodType?: string
+  email?: string
   phoneNumber?: string
   address?: string
   emergencyContact?: { name: string; phone: string; relation: string }
@@ -44,7 +45,7 @@ export interface Doctor {
   firstName: string
   lastName: string
   email: string
-  specialization?: string
+  department?: string
   phoneNumber?: string
   hospitalId?: string
   role: 'doctor'

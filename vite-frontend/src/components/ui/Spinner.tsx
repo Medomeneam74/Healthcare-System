@@ -10,7 +10,7 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
     <div
       className={clsx(
-        'animate-spin rounded-full border-2 border-gray-200 border-t-[#0055BB]',
+        'animate-spin rounded-full border-2 border-line border-t-accent',
         size === 'sm' && 'h-4 w-4',
         size === 'md' && 'h-6 w-6',
         size === 'lg' && 'h-10 w-10',

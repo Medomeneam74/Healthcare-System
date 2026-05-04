@@ -174,7 +174,7 @@ export function NfcScanModal({ open, onOpenChange, onPatientFound }: NfcScanModa
                     <span className="absolute inline-flex h-16 w-16 rounded-full bg-blue-200 opacity-60 animate-ping [animation-delay:0.3s]" />
                   </>
                 )}
-                <div className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full ${bridgeStatus === 'unavailable' ? 'bg-gray-300' : 'bg-[#0055BB]'}`}>
+                <div className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full ${bridgeStatus === 'unavailable' ? 'bg-gray-300' : 'bg-accent'}`}>
                   {searching
                     ? <Spinner size="sm" className="text-white" />
                     : <Wifi className="h-5 w-5 text-white rotate-90" />
@@ -223,7 +223,7 @@ export function NfcScanModal({ open, onOpenChange, onPatientFound }: NfcScanModa
         ) : (
           <div className="space-y-4">
             {/* Patient Card Preview */}
-            <div className="relative rounded-xl bg-gradient-to-br from-[#0055BB] to-[#003380] p-5 text-white overflow-hidden">
+            <div className="relative rounded-xl bg-gradient-to-br from-accent to-accent-active p-5 text-white overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
               <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full bg-white/5 translate-y-6 -translate-x-6" />
               <div className="relative">

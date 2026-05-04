@@ -275,7 +275,7 @@ export function FloatingChat() {
         <button
           onClick={() => setOpen(true)}
           aria-label="Open chat"
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#0055BB] text-white shadow-2xl hover:bg-[#0044a0] active:scale-95 transition-all duration-200 focus:outline-none"
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-2xl hover:bg-accent-hover active:scale-95 transition-all duration-200 focus:outline-none"
         >
           <MessageCircle className="h-6 w-6" />
           {unread > 0 && (
@@ -299,10 +299,7 @@ export function FloatingChat() {
           style={{ border: '1px solid rgba(0,0,0,0.08)' }}
         >
           {/* ── Header ─────────────────────────────────────────────────────── */}
-          <div
-            className="flex items-center gap-3 px-4 py-3 flex-shrink-0 select-none"
-            style={{ background: 'linear-gradient(135deg, #0055BB 0%, #0070f3 100%)' }}
-          >
+          <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0 select-none bg-sidebar">
             {/* Avatar */}
             <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/20 ring-2 ring-white/30">
               <Bot className="h-5 w-5 text-white" />
@@ -354,7 +351,7 @@ export function FloatingChat() {
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex gap-2 items-end ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                     {/* Avatar */}
-                    <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${msg.role === 'assistant' ? 'bg-[#0055BB]' : 'bg-gray-200'}`}>
+                    <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${msg.role === 'assistant' ? 'bg-accent' : 'bg-gray-200'}`}>
                       {msg.role === 'assistant'
                         ? <Bot className="h-3.5 w-3.5 text-white" />
                         : <User className="h-3.5 w-3.5 text-gray-500" />}
@@ -364,7 +361,7 @@ export function FloatingChat() {
                       <div
                         className={`${bubbleMaxW} px-3.5 py-2.5 text-sm leading-relaxed ${
                           msg.role === 'user'
-                            ? 'bg-[#0055BB] text-white rounded-2xl rounded-br-md'
+                            ? 'bg-accent text-white rounded-2xl rounded-br-md'
                             : 'bg-white text-gray-800 rounded-2xl rounded-bl-md shadow-sm border border-gray-100'
                         }`}
                         dir={containsArabic(msg.content) ? 'rtl' : 'ltr'}
@@ -379,7 +376,7 @@ export function FloatingChat() {
                 {/* Typing indicator */}
                 {typing && (
                   <div className="flex gap-2 items-end">
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#0055BB]">
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-accent">
                       <Bot className="h-3.5 w-3.5 text-white" />
                     </div>
                     <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
@@ -426,7 +423,7 @@ export function FloatingChat() {
                       ref={inputRef}
                       rows={1}
                       dir={inputIsArabic ? 'rtl' : 'ltr'}
-                      className="flex-1 resize-none overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm leading-5 focus:outline-none focus:ring-2 focus:ring-[#0055BB]/30 focus:border-[#0055BB] disabled:opacity-50 transition-colors placeholder:text-gray-400"
+                      className="flex-1 resize-none overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm leading-5 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent disabled:opacity-50 transition-colors placeholder:text-gray-400"
                       style={{ maxHeight: '120px' }}
                       placeholder="Ask anything…"
                       value={input}
@@ -456,7 +453,7 @@ export function FloatingChat() {
                       onClick={() => sendMessage()}
                       disabled={!input.trim() || busy}
                       aria-label="Send"
-                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#0055BB] text-white disabled:opacity-40 hover:bg-[#0044a0] active:scale-95 transition-all focus:outline-none"
+                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-accent text-white disabled:opacity-40 hover:bg-accent-hover active:scale-95 transition-all focus:outline-none"
                     >
                       {typing ? <Spinner size="sm" /> : <Send className="h-4 w-4" />}
                     </button>

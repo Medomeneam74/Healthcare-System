@@ -8,6 +8,13 @@ export const assignPatientToDoctorSchema = joi.object({
 })
 
 
+// reassign patient from one doctor to another
+export const reassignPatientSchema = joi.object({
+    patientId    : generalFields.objectId.required(),
+    fromDoctorId : generalFields.objectId.required(),
+    toDoctorId   : generalFields.objectId.required(),
+})
+
 // get patients of a doctor schema
 export const getPatientsOfDoctorSchema = joi.object({
     doctorId : generalFields.objectId.required(),

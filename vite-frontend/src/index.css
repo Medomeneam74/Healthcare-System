@@ -2,24 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --primary: #0055BB;
-  --primary-light: #E8F0FE;
-  --background: #F8FAFC;
-  --sidebar-bg: #0F172A;
-}
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
 
-body {
-  background-color: var(--background);
-  font-family: 'Inter', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: oklch(97.5% 0.007 75);
+    font-family: 'Inter', system-ui, sans-serif;
+    color: oklch(17% 0.008 265);
+    font-feature-settings: 'cv02', 'cv03', 'cv04';
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @layer utilities {
-  .severity-critical { @apply bg-red-50 text-red-700 border border-red-300; }
-  .severity-high     { @apply bg-orange-50 text-orange-800 border border-orange-300; }
-  .severity-moderate { @apply bg-orange-50 text-orange-600 border border-orange-200; }
-  .severity-low      { @apply bg-green-50 text-green-700 border border-green-300; }
-  .severity-none     { @apply bg-gray-50 text-gray-600 border border-gray-200; }
-  .severity-unknown  { @apply bg-gray-50 text-gray-500 border border-gray-200; }
+  .severity-critical { @apply bg-sev-critical-bg text-sev-critical-fg border border-sev-critical-line; }
+  .severity-high     { @apply bg-sev-high-bg text-sev-high-fg border border-sev-high-line; }
+  .severity-moderate { @apply bg-sev-moderate-bg text-sev-moderate-fg border border-sev-moderate-line; }
+  .severity-low      { @apply bg-sev-low-bg text-sev-low-fg border border-sev-low-line; }
+  .severity-none     { @apply bg-sev-none-bg text-sev-none-fg border border-sev-none-line; }
+  .severity-unknown  { @apply bg-sev-unknown-bg text-sev-unknown-fg border border-sev-unknown-line; }
+}
+
+/* Page entry — route change */
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-page-in {
+  animation: page-fade-in 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Tab content entry — more subtle than page */
+@keyframes tab-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-tab-in {
+  animation: tab-fade-in 260ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Sidebar nav item stagger */
+@keyframes sidebar-item-in {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-sidebar-item {
+  opacity: 0;
+  animation: sidebar-item-in 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Mobile sidebar slide */
+@keyframes sidebar-mobile-in {
+  from { opacity: 0.6; transform: translateX(-100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-sidebar-mobile {
+  animation: sidebar-mobile-in 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Mobile overlay backdrop */
+@keyframes overlay-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-overlay {
+  animation: overlay-fade 220ms ease-out both;
+}
+
+/* Login form — type toggle crossfade */
+@keyframes form-type-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-form-type {
+  animation: form-type-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Login page entry animations */
+@keyframes login-panel-in {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes login-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes login-feat-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes login-ecg-draw {
+  from { stroke-dashoffset: 320; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-login-panel {
+  animation: login-panel-in 460ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.animate-login-form {
+  animation: login-up 400ms cubic-bezier(0.23, 1, 0.32, 1) 120ms both;
+}
+
+.animate-login-feat {
+  opacity: 0;
+  animation: login-feat-in 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.animate-login-illus {
+  opacity: 0;
+  animation: login-up 520ms cubic-bezier(0.23, 1, 0.32, 1) 320ms both;
+}
+
+.login-ecg {
+  stroke-dashoffset: 320;
+  animation: login-ecg-draw 1.8s cubic-bezier(0.23, 1, 0.32, 1) 1000ms forwards;
 }

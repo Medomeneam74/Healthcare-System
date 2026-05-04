@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Package, AlertTriangle, ClipboardList, Search, Plus, Edit2, Check,
   X, Pill, Clock, User, CheckCircle2, RefreshCw, Droplets, Calendar,
@@ -34,9 +34,9 @@ function isLow(item: PharmacyInventoryItem) {
 
 function StatusBadge({ status }: { status: Prescription['status'] }) {
   const map = {
-    pending_pickup: { label: 'Pending', className: 'bg-amber-100 text-amber-700' },
-    dispensed: { label: 'Dispensed', className: 'bg-green-100 text-green-700' },
-    cancelled: { label: 'Cancelled', className: 'bg-gray-100 text-gray-500' },
+    pending_pickup: { label: 'Pending',   className: 'bg-sev-high-bg text-sev-high-fg' },
+    dispensed:      { label: 'Dispensed', className: 'bg-sev-none-bg text-sev-none-fg' },
+    cancelled:      { label: 'Cancelled', className: 'bg-canvas-subtle text-ink-secondary' },
   }
   const { label, className } = map[status] ?? map.pending_pickup
   return (
@@ -48,15 +48,15 @@ function StatusBadge({ status }: { status: Prescription['status'] }) {
 
 function PatientCard({ patient }: { patient: Patient }) {
   return (
-    <div className="rounded-xl bg-gradient-to-br from-[#0055BB] to-[#003380] p-4 text-white">
+    <div className="rounded-xl bg-sidebar p-4 text-white">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20">
-          <User className="h-5 w-5" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sidebar-subtle">
+          <User className="h-5 w-5 text-sidebar-muted" />
         </div>
         <div>
           <p className="font-bold">{patient.firstName} {patient.lastName}</p>
-          <p className="text-xs text-blue-200">ID: {patient.nationalId}</p>
-          <div className="flex gap-3 mt-1 text-xs text-blue-100">
+          <p className="text-xs text-sidebar-muted">ID: {patient.nationalId}</p>
+          <div className="flex gap-3 mt-1 text-xs text-white/70">
             {patient.bloodType && (
               <span className="flex items-center gap-1"><Droplets className="h-3 w-3" />{patient.bloodType}</span>
             )}
@@ -124,7 +124,7 @@ function AddDrugDialog({ open, onOpenChange, onSaved }: AddDrugDialogProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Beaker className="h-4 w-4 text-[#0055BB]" />Add Drug to Inventory
+            <Beaker className="h-4 w-4 text-accent" />Add Drug to Inventory
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
@@ -146,7 +146,7 @@ function AddDrugDialog({ open, onOpenChange, onSaved }: AddDrugDialogProps) {
               <Input placeholder="e.g., tablets, ml" value={form.unit} onChange={e => set('unit', e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label>Price per Unit <span className="text-gray-400 font-normal">(EGP)</span></Label>
+              <Label>Price per Unit <span className="text-ink-muted font-normal">(EGP)</span></Label>
               <Input type="number" min="0" step="0.01" placeholder="e.g., 12.50" value={form.pricePerUnit} onChange={e => set('pricePerUnit', e.target.value)} />
             </div>
             <div className="space-y-1">
@@ -154,7 +154,7 @@ function AddDrugDialog({ open, onOpenChange, onSaved }: AddDrugDialogProps) {
               <Input type="number" min="0" placeholder="10" value={form.lowStockThreshold} onChange={e => set('lowStockThreshold', e.target.value)} />
             </div>
             <div className="col-span-2 space-y-1">
-              <Label>Dosage Forms <span className="text-gray-400 font-normal">(comma-separated)</span></Label>
+              <Label>Dosage Forms <span className="text-ink-muted font-normal">(comma-separated)</span></Label>
               <Input placeholder="e.g., tablet, syrup, capsule" value={form.dosageForms} onChange={e => set('dosageForms', e.target.value)} />
             </div>
             <div className="space-y-1">
@@ -306,7 +306,7 @@ function InventoryTab({ inventory, loading, onRefresh }: InventoryTabProps) {
       {/* Toolbar */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-muted" />
           <Input
             placeholder="Search drugs…"
             className="pl-9"
@@ -340,7 +340,7 @@ function InventoryTab({ inventory, loading, onRefresh }: InventoryTabProps) {
       ) : (
         <div className="rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <thead className="bg-canvas-subtle text-xs font-semibold text-gray-500 uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3 text-left">Drug</th>
                 <th className="px-4 py-3 text-left hidden md:table-cell">Forms</th>
@@ -353,22 +353,22 @@ function InventoryTab({ inventory, loading, onRefresh }: InventoryTabProps) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(item => (
-                <tr key={item._id} className={`${!item.isActive ? 'opacity-50' : ''} hover:bg-gray-50 transition-colors`}>
+                <tr key={item._id} className={`${!item.isActive ? 'opacity-50' : ''} hover:bg-canvas-subtle transition-colors`}>
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-900">{item.name}</p>
                     {item.genericName && (
-                      <p className="text-xs text-gray-400">{item.genericName}</p>
+                      <p className="text-xs text-ink-muted">{item.genericName}</p>
                     )}
                     {item.manufacturer && (
-                      <p className="text-xs text-gray-400">{item.manufacturer}</p>
+                      <p className="text-xs text-ink-muted">{item.manufacturer}</p>
                     )}
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {(item.dosageForms ?? []).map(f => (
-                        <span key={f} className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded">{f}</span>
+                        <span key={f} className="bg-accent-light text-accent text-[10px] px-1.5 py-0.5 rounded">{f}</span>
                       ))}
-                      {!item.dosageForms?.length && <span className="text-gray-300">—</span>}
+                      {!item.dosageForms?.length && <span className="text-ink-faint">—</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -376,7 +376,7 @@ function InventoryTab({ inventory, loading, onRefresh }: InventoryTabProps) {
                       <span className={`font-bold ${isLow(item) ? 'text-red-600' : 'text-gray-900'}`}>
                         {item.quantityInStock}
                       </span>
-                      <span className="text-xs text-gray-400">{item.unit ?? 'units'}</span>
+                      <span className="text-xs text-ink-muted">{item.unit ?? 'units'}</span>
                       {isLow(item) && (
                         <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
                           <AlertTriangle className="h-2.5 w-2.5" />Low
@@ -386,7 +386,7 @@ function InventoryTab({ inventory, loading, onRefresh }: InventoryTabProps) {
                   </td>
                   <td className="px-4 py-3 text-right hidden md:table-cell">
                     <span className="text-sm text-gray-700">
-                      {item.pricePerUnit > 0 ? `EGP ${item.pricePerUnit.toFixed(2)}` : <span className="text-gray-300">—</span>}
+                      {item.pricePerUnit > 0 ? `EGP ${item.pricePerUnit.toFixed(2)}` : <span className="text-ink-faint">—</span>}
                     </span>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
@@ -436,7 +436,7 @@ function InventoryTab({ inventory, loading, onRefresh }: InventoryTabProps) {
         title="Deactivate Medication"
         description={`Mark "${confirmDeactivate?.name}" as inactive? It will no longer appear as available in prescriptions.`}
         confirmLabel="Deactivate"
-        variant="destructive"
+        variant="danger"
         loading={togglingId === confirmDeactivate?._id}
         onConfirm={() => {
           if (confirmDeactivate) {
@@ -501,27 +501,46 @@ interface PrescriptionCardProps {
   rx: Prescription
   inventory: PharmacyInventoryItem[]
   onDispense: (rx: Prescription, unavailable: MedAvailability[]) => void
+  onCancelled: (rxId: string) => void
 }
 
-function PrescriptionCard({ rx, inventory, onDispense }: PrescriptionCardProps) {
+function PrescriptionCard({ rx, inventory, onDispense, onCancelled }: PrescriptionCardProps) {
+  const { toast } = useToast()
   const doctor = typeof rx.doctorId === 'object' ? rx.doctorId : null
   const availability = checkMedAvailability(rx, inventory)
   const unavailable = availability.filter(a => !a.available)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+
+  async function handleCancel() {
+    setCancelling(true)
+    try {
+      await client.patch(`/api/pharmacy/prescriptions/${rx._id}/cancel`)
+      toast({ title: 'Prescription cancelled', variant: 'success' })
+      onCancelled(rx._id)
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast({ title: e?.response?.data?.message ?? 'Failed to cancel prescription', variant: 'error' })
+    } finally {
+      setCancelling(false)
+      setConfirmOpen(false)
+    }
+  }
 
   return (
     <div className="rounded-xl border p-4 hover:shadow-sm transition-shadow bg-white">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
-          <p className="text-xs text-gray-400 flex items-center gap-1">
+          <p className="text-xs text-ink-muted flex items-center gap-1">
             <Clock className="h-3 w-3" />{fmtDate(rx.createdAt)}
           </p>
           {doctor && (
             <p className="text-xs text-gray-500 mt-0.5">
               Dr. {doctor.firstName} {doctor.lastName}
-              {doctor.specialization && ` · ${doctor.specialization}`}
+              {doctor.department && ` · ${doctor.department}`}
             </p>
           )}
-          {rx.notes && <p className="text-xs text-gray-400 italic mt-0.5">"{rx.notes}"</p>}
+          {rx.notes && <p className="text-xs text-ink-muted italic mt-0.5">"{rx.notes}"</p>}
         </div>
         <StatusBadge status={rx.status} />
       </div>
@@ -533,11 +552,11 @@ function PrescriptionCard({ rx, inventory, onDispense }: PrescriptionCardProps) 
           const avail = availability[i]
           return (
             <div key={i} className="flex items-center gap-2 text-sm">
-              <Pill className={`h-3.5 w-3.5 flex-shrink-0 ${avail.available ? 'text-[#0055BB]' : 'text-red-400'}`} />
+              <Pill className={`h-3.5 w-3.5 flex-shrink-0 ${avail.available ? 'text-accent' : 'text-red-400'}`} />
               <span className={`font-medium ${avail.available ? '' : 'text-red-600'}`}>{drugName}</span>
-              {med.dosage && <span className="text-gray-400">{med.dosage}</span>}
-              {med.frequency && <span className="text-gray-400 hidden sm:inline">· {med.frequency}</span>}
-              {med.duration && <span className="text-gray-400 hidden sm:inline">· {med.duration}</span>}
+              {med.dosage && <span className="text-ink-muted">{med.dosage}</span>}
+              {med.frequency && <span className="text-ink-muted hidden sm:inline">· {med.frequency}</span>}
+              {med.duration && <span className="text-ink-muted hidden sm:inline">· {med.duration}</span>}
               {!avail.available && (
                 <span className="ml-auto text-[10px] font-semibold text-red-500 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
                   {avail.reason}
@@ -559,15 +578,35 @@ function PrescriptionCard({ rx, inventory, onDispense }: PrescriptionCardProps) 
       )}
 
       {rx.status === 'pending_pickup' && (
-        <Button
-          className="w-full h-8 text-sm"
-          onClick={() => onDispense(rx, unavailable)}
-          disabled={unavailable.length > 0}
-          title={unavailable.length > 0 ? 'Cannot dispense — some medications are unavailable' : undefined}
-        >
-          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />Dispense
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            className="flex-1 h-8 text-sm"
+            onClick={() => onDispense(rx, unavailable)}
+            disabled={unavailable.length > 0}
+            title={unavailable.length > 0 ? 'Cannot dispense — some medications are unavailable' : undefined}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />Dispense
+          </Button>
+          <Button
+            variant="outline"
+            className="h-8 text-sm text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+            onClick={() => setConfirmOpen(true)}
+          >
+            <X className="h-3.5 w-3.5 mr-1" />Cancel
+          </Button>
+        </div>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Cancel Prescription"
+        description="This will mark the prescription as cancelled. The patient will need a new prescription from their doctor. This cannot be undone."
+        confirmLabel="Cancel Prescription"
+        variant="danger"
+        loading={cancelling}
+        onConfirm={handleCancel}
+      />
     </div>
   )
 }
@@ -584,6 +623,15 @@ interface DispenseTabProps {
   onInventoryRefresh: () => void
 }
 
+interface ExtraItem {
+  itemId: string
+  name: string
+  qty: number
+  unit: string
+  price: number | null
+  stock: number
+}
+
 function DispenseTab({ pendingRx, patientLoading, rxLoading, foundPatient, inventory, onPatientSearch, onInventoryRefresh }: DispenseTabProps) {
   const [input, setInput] = useState('')
   const [nfcOpen, setNfcOpen] = useState(false)
@@ -594,16 +642,32 @@ function DispenseTab({ pendingRx, patientLoading, rxLoading, foundPatient, inven
   const { toast } = useToast()
   const [localRx, setLocalRx] = useState<Prescription[]>(pendingRx)
 
+  // Mode toggle
+  const [mode, setMode] = useState<'prescription' | 'walkin'>('prescription')
+
+  // Extra (OTC) items the patient wants beyond the prescription
+  const [extraItems, setExtraItems] = useState<ExtraItem[]>([])
+  const [extraSearch, setExtraSearch] = useState('')
+  const [showExtraDropdown, setShowExtraDropdown] = useState(false)
+
+  // Walk-in (direct) sale state
+  const [walkInItems, setWalkInItems] = useState<ExtraItem[]>([])
+  const [walkInSearch, setWalkInSearch] = useState('')
+  const [showWalkInDropdown, setShowWalkInDropdown] = useState(false)
+  const [walkInSelling, setWalkInSelling] = useState(false)
+
   useEffect(() => setLocalRx(pendingRx), [pendingRx])
 
   function handleDispenseClick(rx: Prescription, unavailable: MedAvailability[]) {
     if (unavailable.length > 0) return
     setDispenseTarget(rx)
-    setQuantities(rx.medications.map(() => 1))
+    setQuantities(rx.medications.map(() => 0))
+    setExtraItems([])
+    setExtraSearch('')
   }
 
   function setQty(idx: number, val: string) {
-    const n = Math.max(1, Math.floor(Number(val) || 1))
+    const n = Math.max(0, Math.floor(Number(val) || 0))
     setQuantities(prev => prev.map((q, i) => i === idx ? n : q))
   }
 
@@ -620,10 +684,46 @@ function DispenseTab({ pendingRx, patientLoading, rxLoading, foundPatient, inven
     return (price !== undefined && price > 0) ? price : null
   }
 
+  // Extra items helpers
+  const extraSearchResults = extraSearch.trim()
+    ? inventory.filter(i =>
+        i.isActive && i.quantityInStock > 0 &&
+        (i.name.toLowerCase().includes(extraSearch.toLowerCase()) ||
+         (i.genericName ?? '').toLowerCase().includes(extraSearch.toLowerCase())) &&
+        !extraItems.some(e => e.itemId === i._id)
+      ).slice(0, 6)
+    : []
+
+  function addExtraItem(item: PharmacyInventoryItem) {
+    setExtraItems(prev => [...prev, {
+      itemId: item._id,
+      name: item.name,
+      qty: 1,
+      unit: item.unit ?? 'units',
+      price: item.pricePerUnit > 0 ? item.pricePerUnit : null,
+      stock: item.quantityInStock,
+    }])
+    setExtraSearch('')
+    setShowExtraDropdown(false)
+  }
+
+  function updateExtraQty(idx: number, val: string) {
+    setExtraItems(prev => prev.map((e, i) => {
+      if (i !== idx) return e
+      const n = Math.max(1, Math.min(Math.floor(Number(val) || 1), e.stock))
+      return { ...e, qty: n }
+    }))
+  }
+
+  function removeExtraItem(idx: number) {
+    setExtraItems(prev => prev.filter((_, i) => i !== idx))
+  }
+
   const quantitiesValid = dispenseTarget
     ? dispenseTarget.medications.every((med, i) => {
         const stock = getStock(med)
-        return stock === null || quantities[i] <= stock
+        const qty = quantities[i] ?? 0
+        return qty >= 1 && (stock === null || qty <= stock)
       })
     : true
 
@@ -634,9 +734,18 @@ function DispenseTab({ pendingRx, patientLoading, rxLoading, foundPatient, inven
       await client.patch(`/api/pharmacy/prescriptions/${dispenseTarget._id}/dispense`, {
         medicationQuantities: quantities,
       })
+
+      // Deduct stock for each extra (OTC) item
+      await Promise.all(extraItems.map(e =>
+        client.patch(`/api/pharmacy/inventory/${e.itemId}`, {
+          quantityInStock: e.stock - e.qty,
+        })
+      ))
+
       toast({ title: 'Prescription dispensed successfully', variant: 'success' })
       setLocalRx(prev => prev.filter(r => r._id !== dispenseTarget._id))
       setDispenseTarget(null)
+      setExtraItems([])
       onInventoryRefresh()
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } }
@@ -646,81 +755,283 @@ function DispenseTab({ pendingRx, patientLoading, rxLoading, foundPatient, inven
     }
   }
 
+  // Walk-in helpers
+  const walkInSearchResults = walkInSearch.trim()
+    ? inventory.filter(i =>
+        i.isActive && i.quantityInStock > 0 &&
+        (i.name.toLowerCase().includes(walkInSearch.toLowerCase()) ||
+         (i.genericName ?? '').toLowerCase().includes(walkInSearch.toLowerCase())) &&
+        !walkInItems.some(w => w.itemId === i._id)
+      ).slice(0, 6)
+    : []
+
+  function addWalkInItem(item: PharmacyInventoryItem) {
+    setWalkInItems(prev => [...prev, {
+      itemId: item._id,
+      name: item.name,
+      qty: 1,
+      unit: item.unit ?? 'units',
+      price: item.pricePerUnit > 0 ? item.pricePerUnit : null,
+      stock: item.quantityInStock,
+    }])
+    setWalkInSearch('')
+    setShowWalkInDropdown(false)
+  }
+
+  function updateWalkInQty(idx: number, val: string) {
+    setWalkInItems(prev => prev.map((w, i) => {
+      if (i !== idx) return w
+      const n = Math.max(1, Math.min(Math.floor(Number(val) || 1), w.stock))
+      return { ...w, qty: n }
+    }))
+  }
+
+  function removeWalkInItem(idx: number) {
+    setWalkInItems(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  async function handleWalkInSale() {
+    if (walkInItems.length === 0) return
+    setWalkInSelling(true)
+    try {
+      await Promise.all(walkInItems.map(w =>
+        client.patch(`/api/pharmacy/inventory/${w.itemId}`, {
+          quantityInStock: w.stock - w.qty,
+        })
+      ))
+      toast({ title: `Walk-in sale complete — ${walkInItems.length} item${walkInItems.length > 1 ? 's' : ''} dispensed`, variant: 'success' })
+      setWalkInItems([])
+      setWalkInSearch('')
+      onInventoryRefresh()
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast({ title: e?.response?.data?.message ?? 'Sale failed', variant: 'error' })
+    } finally {
+      setWalkInSelling(false)
+    }
+  }
+
+  const walkInTotal = walkInItems.reduce((sum, w) => w.price !== null ? sum + w.price * w.qty : sum, 0)
+
   return (
     <div className="space-y-4" id="dispense">
-      {/* Patient search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Search className="h-4 w-4 text-[#0055BB]" />Find Patient
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-xs text-gray-500">Scan the patient's NFC card or enter their ID manually</p>
+      {/* Mode toggle */}
+      <div className="flex items-center gap-1 rounded-xl bg-canvas-subtle border border-line p-1 w-full sm:w-auto sm:inline-flex">
+        <button
+          onClick={() => setMode('prescription')}
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            mode === 'prescription'
+              ? 'bg-white text-ink shadow-sm border border-line'
+              : 'text-ink-secondary hover:text-ink'
+          }`}
+        >
+          <Wifi className="h-3.5 w-3.5 rotate-90" />
+          Prescription
+        </button>
+        <button
+          onClick={() => setMode('walkin')}
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            mode === 'walkin'
+              ? 'bg-white text-ink shadow-sm border border-line'
+              : 'text-ink-secondary hover:text-ink'
+          }`}
+        >
+          <User className="h-3.5 w-3.5" />
+          Walk-in Sale
+        </button>
+      </div>
 
-          {/* NFC scan button */}
-          <button
-            onClick={() => setNfcOpen(true)}
-            className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#0055BB]/40 bg-blue-50/50 py-3 text-sm font-medium text-[#0055BB] hover:bg-blue-50 hover:border-[#0055BB]/70 transition-colors"
-          >
-            <Wifi className="h-4 w-4 rotate-90" />
-            Scan NFC Card
-          </button>
-
-          {patientLoading && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Spinner size="sm" />Searching…
-            </div>
-          )}
-
-          {!patientLoading && foundPatient && (
-            <PatientCard patient={foundPatient} />
-          )}
-
-          {!patientLoading && !foundPatient && input && (
-            <p className="text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle className="h-3.5 w-3.5" />Patient not found
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <NfcScanModal
-        open={nfcOpen}
-        onOpenChange={setNfcOpen}
-        onPatientFound={p => {
-          setNfcOpen(false)
-          onPatientSearch(p._id)
-        }}
-      />
-
-      {/* Pending prescriptions */}
-      {foundPatient && (
+      {mode === 'walkin' ? (
+        /* ── Walk-in sale flow ── */
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="h-4 w-4 text-[#0055BB]" />
-              Pending Prescriptions ({localRx.length})
+              <User className="h-4 w-4 text-accent" />Walk-in Sale
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {rxLoading ? (
-              <div className="flex justify-center py-8"><Spinner size="lg" /></div>
-            ) : localRx.length === 0 ? (
-              <div className="text-center py-10">
-                <CheckCircle2 className="h-10 w-10 text-green-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500 font-medium">All prescriptions have been dispensed</p>
-                <p className="text-xs text-gray-400 mt-1">No pending prescriptions for this patient</p>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-gray-500">
+              Add items the patient wants to purchase directly — no prescription or NFC scan required.
+            </p>
+
+            {/* Inventory search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-muted" />
+              <Input
+                placeholder="Search inventory…"
+                value={walkInSearch}
+                onChange={e => { setWalkInSearch(e.target.value); setShowWalkInDropdown(true) }}
+                onFocus={() => setShowWalkInDropdown(true)}
+                onBlur={() => setTimeout(() => setShowWalkInDropdown(false), 150)}
+                className="pl-9"
+              />
+              {showWalkInDropdown && walkInSearchResults.length > 0 && (
+                <div className="absolute z-20 top-full mt-1 w-full bg-canvas-raised border border-line rounded-lg shadow-card-md overflow-hidden">
+                  {walkInSearchResults.map(item => (
+                    <button
+                      key={item._id}
+                      onMouseDown={() => addWalkInItem(item)}
+                      className="w-full flex items-center justify-between px-3 py-2.5 text-sm hover:bg-canvas-subtle text-left"
+                    >
+                      <div>
+                        <span className="font-medium text-ink">{item.name}</span>
+                        {item.genericName && <span className="ml-1.5 text-xs text-ink-muted">{item.genericName}</span>}
+                      </div>
+                      <span className="text-xs text-ink-muted shrink-0 ml-2">
+                        {item.quantityInStock} {item.unit ?? 'units'}
+                        {item.pricePerUnit > 0 && ` · EGP ${item.pricePerUnit.toFixed(2)}`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Items list */}
+            {walkInItems.length === 0 ? (
+              <div className="flex flex-col items-center py-10 text-center">
+                <Pill className="h-10 w-10 text-ink-faint mb-2" />
+                <p className="text-sm text-ink-muted font-medium">No items added yet</p>
+                <p className="text-xs text-ink-faint mt-0.5">Search above to add medications</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {localRx.map(rx => (
-                  <PrescriptionCard key={rx._id} rx={rx} inventory={inventory} onDispense={handleDispenseClick} />
+              <div className="space-y-2">
+                {walkInItems.map((w, i) => (
+                  <div key={i} className="flex items-center gap-2 rounded-lg border border-line-subtle bg-canvas-subtle px-3 py-2.5">
+                    <Pill className="h-4 w-4 text-accent flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">{w.name}</p>
+                      <p className="text-xs text-ink-muted">{w.stock} {w.unit} in stock</p>
+                    </div>
+                    <Input
+                      type="number" min={1} max={w.stock}
+                      value={w.qty}
+                      onChange={e => updateWalkInQty(i, e.target.value)}
+                      className="h-8 w-16 text-sm text-center"
+                    />
+                    <span className="text-xs text-ink-muted w-10 shrink-0">{w.unit}</span>
+                    {w.price !== null ? (
+                      <span className="text-sm font-semibold text-accent w-24 shrink-0 text-right">
+                        EGP {(w.price * w.qty).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="w-24 shrink-0" />
+                    )}
+                    <button
+                      onClick={() => removeWalkInItem(i)}
+                      className="text-ink-muted hover:text-sev-critical-fg transition-colors ml-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 ))}
+
+                {/* Total */}
+                {walkInTotal > 0 && (
+                  <div className="rounded-lg bg-accent px-4 py-3 text-white flex items-center justify-between">
+                    <span className="text-sm font-semibold">Total</span>
+                    <span className="text-lg font-bold">EGP {walkInTotal.toFixed(2)}</span>
+                  </div>
+                )}
+
+                <Button
+                  className="w-full"
+                  onClick={handleWalkInSale}
+                  disabled={walkInSelling || walkInItems.length === 0}
+                >
+                  {walkInSelling
+                    ? <><Spinner size="sm" /> Processing…</>
+                    : <><CheckCircle2 className="h-4 w-4 mr-1.5" />Confirm Sale</>
+                  }
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
+      ) : (
+        <>
+          {/* ── Prescription flow ── */}
+          {/* Patient search */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Search className="h-4 w-4 text-accent" />Find Patient
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-gray-500">Scan the patient's NFC card or enter their ID manually</p>
+
+              {/* NFC scan button */}
+              <button
+                onClick={() => setNfcOpen(true)}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-accent-muted bg-accent-light py-3 text-sm font-medium text-accent hover:bg-accent-light hover:border-accent transition-colors"
+              >
+                <Wifi className="h-4 w-4 rotate-90" />
+                Scan NFC Card
+              </button>
+
+              {patientLoading && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Spinner size="sm" />Searching…
+                </div>
+              )}
+
+              {!patientLoading && foundPatient && (
+                <PatientCard patient={foundPatient} />
+              )}
+
+              {!patientLoading && !foundPatient && input && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" />Patient not found
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <NfcScanModal
+            open={nfcOpen}
+            onOpenChange={setNfcOpen}
+            onPatientFound={p => {
+              setNfcOpen(false)
+              onPatientSearch(p._id)
+            }}
+          />
+
+          {/* Pending prescriptions */}
+          {foundPatient && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ClipboardList className="h-4 w-4 text-accent" />
+                  Pending Prescriptions ({localRx.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {rxLoading ? (
+                  <div className="flex justify-center py-8"><Spinner size="lg" /></div>
+                ) : localRx.length === 0 ? (
+                  <div className="text-center py-10">
+                    <CheckCircle2 className="h-10 w-10 text-green-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500 font-medium">All prescriptions have been dispensed</p>
+                    <p className="text-xs text-ink-muted mt-1">No pending prescriptions for this patient</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {localRx.map(rx => (
+                      <PrescriptionCard
+                        key={rx._id}
+                        rx={rx}
+                        inventory={inventory}
+                        onDispense={handleDispenseClick}
+                        onCancelled={id => setLocalRx(prev => prev.filter(r => r._id !== id))}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Dispense quantities dialog */}
@@ -728,7 +1039,7 @@ function DispenseTab({ pendingRx, patientLoading, rxLoading, foundPatient, inven
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Pill className="h-4 w-4 text-[#0055BB]" />Dispense Medications
+              <Pill className="h-4 w-4 text-accent" />Dispense Medications
             </DialogTitle>
             <DialogDescription>
               Enter how many units the patient needs for each medication. Stock will be deducted accordingly.
@@ -736,35 +1047,44 @@ function DispenseTab({ pendingRx, patientLoading, rxLoading, foundPatient, inven
           </DialogHeader>
 
           {dispenseTarget && (
-            <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[62vh] overflow-y-auto pr-1">
+              {/* Prescribed medications */}
+              <p className="text-xs font-semibold text-ink-secondary uppercase tracking-wide">
+                Prescribed ({dispenseTarget.medications.length})
+              </p>
               {dispenseTarget.medications.map((med, i) => {
                 const invItem = typeof med.inventoryItemId === 'object' ? med.inventoryItemId as PharmacyInventoryItem : null
                 const drugName = med.name ?? invItem?.name ?? 'Unknown drug'
                 const stock = getStock(med)
                 const unit = getUnit(med)
                 const price = getPrice(med)
-                const qty = quantities[i] ?? 1
+                const qty = quantities[i] ?? 0
+                const missing = qty < 1
                 const overStock = stock !== null && qty > stock
 
                 return (
                   <div
                     key={i}
-                    className={`rounded-lg border p-3 space-y-2 ${overStock ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-gray-50'}`}
+                    className={`rounded-lg border p-3 space-y-2 ${
+                      overStock ? 'border-sev-critical-line bg-sev-critical-bg'
+                      : missing ? 'border-sev-high-line bg-sev-high-bg'
+                      : 'border-line-subtle bg-canvas-subtle'
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                          <Pill className="h-3.5 w-3.5 text-[#0055BB] flex-shrink-0" />
+                        <p className="text-sm font-semibold text-ink flex items-center gap-1.5">
+                          <Pill className="h-3.5 w-3.5 text-accent flex-shrink-0" />
                           {drugName}
                         </p>
-                        <div className="flex flex-wrap gap-2 mt-0.5 text-xs text-gray-500">
+                        <div className="flex flex-wrap gap-2 mt-0.5 text-xs text-ink-secondary">
                           {med.dosage && <span>{med.dosage}</span>}
                           {med.frequency && <span>· {med.frequency}</span>}
                           {med.duration && <span>· {med.duration}</span>}
                         </div>
                       </div>
                       {stock !== null && (
-                        <span className="text-xs text-gray-400 whitespace-nowrap shrink-0">
+                        <span className="text-xs text-ink-muted whitespace-nowrap shrink-0">
                           {stock} {unit} in stock
                         </span>
                       )}
@@ -776,48 +1096,135 @@ function DispenseTab({ pendingRx, patientLoading, rxLoading, foundPatient, inven
                         type="number"
                         min={1}
                         max={stock ?? undefined}
-                        value={qty}
+                        value={qty === 0 ? '' : qty}
+                        placeholder="Enter qty"
                         onChange={e => setQty(i, e.target.value)}
-                        className={`h-8 text-sm ${overStock ? 'border-red-400 focus:ring-red-300' : ''}`}
+                        className={`h-8 text-sm ${overStock || missing ? 'border-sev-high-line' : ''}`}
                       />
-                      <span className="text-xs text-gray-400 shrink-0">{unit}</span>
+                      <span className="text-xs text-ink-muted shrink-0">{unit}</span>
                     </div>
 
-                    {price !== null && (
-                      <div className="flex items-center justify-between rounded bg-white border border-gray-100 px-2.5 py-1.5 text-xs">
-                        <span className="text-gray-500">EGP {price.toFixed(2)} / {unit}</span>
-                        <span className="font-semibold text-[#0055BB]">
+                    {price !== null && qty >= 1 && (
+                      <div className="flex items-center justify-between rounded bg-canvas-raised border border-line-subtle px-2.5 py-1.5 text-xs">
+                        <span className="text-ink-secondary">EGP {price.toFixed(2)} / {unit}</span>
+                        <span className="font-semibold text-accent">
                           Total: EGP {(price * qty).toFixed(2)}
                         </span>
                       </div>
                     )}
 
-                    {overStock && (
-                      <p className="text-xs text-red-600 flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        Maximum allowed: {stock} {unit}
+                    {missing && (
+                      <p className="text-xs text-sev-high-fg flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />Enter quantity for this medication
                       </p>
                     )}
-
+                    {overStock && (
+                      <p className="text-xs text-sev-critical-fg flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />Maximum allowed: {stock} {unit}
+                      </p>
+                    )}
                     {stock === null && (
-                      <p className="text-xs text-gray-400 italic">Not linked to inventory — no stock deducted</p>
+                      <p className="text-xs text-ink-muted italic">Not linked to inventory — no stock deducted</p>
                     )}
                   </div>
                 )
               })}
 
+              {/* Extra (OTC) items */}
+              <div className="border-t border-line pt-3 space-y-2">
+                <p className="text-xs font-semibold text-ink-secondary uppercase tracking-wide flex items-center gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />Extra items (OTC)
+                </p>
+
+                {/* Search box */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-muted" />
+                  <Input
+                    placeholder="Search inventory to add…"
+                    value={extraSearch}
+                    onChange={e => { setExtraSearch(e.target.value); setShowExtraDropdown(true) }}
+                    onFocus={() => setShowExtraDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowExtraDropdown(false), 150)}
+                    className="h-8 text-sm pl-9"
+                  />
+                  {showExtraDropdown && extraSearchResults.length > 0 && (
+                    <div className="absolute z-20 top-full mt-1 w-full bg-canvas-raised border border-line rounded-lg shadow-card-md overflow-hidden">
+                      {extraSearchResults.map(item => (
+                        <button
+                          key={item._id}
+                          onMouseDown={() => addExtraItem(item)}
+                          className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-canvas-subtle text-left"
+                        >
+                          <div>
+                            <span className="font-medium text-ink">{item.name}</span>
+                            {item.genericName && <span className="ml-1.5 text-xs text-ink-muted">{item.genericName}</span>}
+                          </div>
+                          <span className="text-xs text-ink-muted shrink-0 ml-2">
+                            {item.quantityInStock} {item.unit ?? 'units'}
+                            {item.pricePerUnit > 0 && ` · EGP ${item.pricePerUnit.toFixed(2)}`}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Added extra items */}
+                {extraItems.map((extra, i) => (
+                  <div key={i} className="flex items-center gap-2 rounded-lg border border-line-subtle bg-canvas-subtle px-3 py-2">
+                    <Pill className="h-3.5 w-3.5 text-accent flex-shrink-0" />
+                    <span className="text-sm font-medium text-ink flex-1 min-w-0 truncate">{extra.name}</span>
+                    <Input
+                      type="number" min={1} max={extra.stock}
+                      value={extra.qty}
+                      onChange={e => updateExtraQty(i, e.target.value)}
+                      className="h-7 w-16 text-sm text-center"
+                    />
+                    <span className="text-xs text-ink-muted w-10 shrink-0">{extra.unit}</span>
+                    {extra.price !== null ? (
+                      <span className="text-xs font-semibold text-accent w-20 shrink-0 text-right">
+                        EGP {(extra.price * extra.qty).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="w-20 shrink-0" />
+                    )}
+                    <button
+                      onClick={() => removeExtraItem(i)}
+                      className="text-ink-muted hover:text-sev-critical-fg transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               {/* Grand total */}
               {(() => {
                 if (!dispenseTarget) return null
-                const grandTotal = dispenseTarget.medications.reduce((sum, med, i) => {
+                const rxTotal = dispenseTarget.medications.reduce((sum, med, i) => {
                   const p = getPrice(med)
-                  return p !== null ? sum + p * (quantities[i] ?? 1) : sum
+                  return p !== null ? sum + p * (quantities[i] ?? 0) : sum
                 }, 0)
+                const extraTotal = extraItems.reduce((sum, e) =>
+                  e.price !== null ? sum + e.price * e.qty : sum, 0)
+                const grandTotal = rxTotal + extraTotal
                 if (grandTotal <= 0) return null
                 return (
-                  <div className="flex items-center justify-between rounded-lg bg-[#0055BB] px-4 py-2.5 text-white">
-                    <span className="text-sm font-semibold">Grand Total</span>
-                    <span className="text-lg font-bold">EGP {grandTotal.toFixed(2)}</span>
+                  <div className="rounded-lg bg-accent px-4 py-3 text-white space-y-1">
+                    {extraTotal > 0 && (
+                      <div className="flex items-center justify-between text-xs text-accent-fg/70">
+                        <span>Prescribed</span><span>EGP {rxTotal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {extraTotal > 0 && (
+                      <div className="flex items-center justify-between text-xs text-accent-fg/70">
+                        <span>Extra items</span><span>EGP {extraTotal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between pt-1 border-t border-white/20">
+                      <span className="text-sm font-semibold">Grand Total</span>
+                      <span className="text-lg font-bold">EGP {grandTotal.toFixed(2)}</span>
+                    </div>
                   </div>
                 )
               })()}
@@ -891,7 +1298,7 @@ function HistoryTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-4 w-4 text-[#0055BB]" />Prescription History
+            <FileText className="h-4 w-4 text-accent" />Prescription History
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -940,7 +1347,7 @@ function HistoryTab() {
                       <div key={rx._id} className="rounded-xl border p-4 bg-white">
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <div>
-                            <p className="text-xs text-gray-400 flex items-center gap-1">
+                            <p className="text-xs text-ink-muted flex items-center gap-1">
                               <Clock className="h-3 w-3" />{fmtDate(rx.createdAt)}
                             </p>
                             {doctor && (
@@ -961,7 +1368,7 @@ function HistoryTab() {
                             const invItem = typeof med.inventoryItemId === 'object' ? med.inventoryItemId : null
                             const name = med.name ?? invItem?.name ?? 'Unknown'
                             return (
-                              <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 rounded-full px-2.5 py-1 text-xs font-medium">
+                              <span key={i} className="inline-flex items-center gap-1 bg-accent-light text-accent rounded-full px-2.5 py-1 text-xs font-medium">
                                 <Pill className="h-3 w-3" />
                                 {name}{med.dosage ? ` · ${med.dosage}` : ''}
                               </span>
@@ -969,7 +1376,7 @@ function HistoryTab() {
                           })}
                         </div>
                         {rx.notes && (
-                          <p className="text-xs text-gray-400 italic mt-2">"{rx.notes}"</p>
+                          <p className="text-xs text-ink-muted italic mt-2">"{rx.notes}"</p>
                         )}
                       </div>
                     )
@@ -1002,7 +1409,7 @@ function ReportsTab({ inventory, missingMeds, lastScanTime, loading, onRefresh, 
     <div className="space-y-4" id="reports">
       {/* Toolbar */}
       <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-ink-muted">
           {lastScanTime
             ? `Patient requests last updated: ${lastScanTime.toLocaleTimeString()}`
             : 'Scan a patient card to populate requested medications'}
@@ -1019,7 +1426,7 @@ function ReportsTab({ inventory, missingMeds, lastScanTime, loading, onRefresh, 
           <CardTitle className="flex items-center gap-2 text-base">
             <Package className="h-4 w-4 text-red-500" />
             Out of Stock
-            <span className="ml-auto text-sm font-normal text-gray-400">{outOfStock.length} drug{outOfStock.length !== 1 ? 's' : ''}</span>
+            <span className="ml-auto text-sm font-normal text-ink-muted">{outOfStock.length} drug{outOfStock.length !== 1 ? 's' : ''}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1034,7 +1441,7 @@ function ReportsTab({ inventory, missingMeds, lastScanTime, loading, onRefresh, 
                 <div key={item._id} className="flex items-center justify-between rounded-lg border border-red-100 bg-red-50 px-3 py-2.5">
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                    {item.genericName && <p className="text-xs text-gray-400">{item.genericName}</p>}
+                    {item.genericName && <p className="text-xs text-ink-muted">{item.genericName}</p>}
                   </div>
                   <span className="text-xs font-bold text-red-600 bg-red-100 rounded-full px-2.5 py-0.5">
                     0 {item.unit ?? 'units'}
@@ -1052,13 +1459,13 @@ function ReportsTab({ inventory, missingMeds, lastScanTime, loading, onRefresh, 
           <CardTitle className="flex items-center gap-2 text-base">
             <AlertTriangle className="h-4 w-4 text-orange-500" />
             Requested — Not Stocked
-            <span className="ml-auto text-sm font-normal text-gray-400">{missingMeds.length} drug{missingMeds.length !== 1 ? 's' : ''}</span>
+            <span className="ml-auto text-sm font-normal text-ink-muted">{missingMeds.length} drug{missingMeds.length !== 1 ? 's' : ''}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {missingMeds.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-ink-muted">
                 {lastScanTime
                   ? 'No prescription requests outside of current inventory'
                   : 'Scan a patient NFC card to detect missing medications'}
@@ -1096,6 +1503,7 @@ function ReportsTab({ inventory, missingMeds, lastScanTime, loading, onRefresh, 
 
 export default function PharmacistDashboard() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { toast } = useToast()
 
   const [inventory, setInventory] = useState<PharmacyInventoryItem[]>([])
@@ -1107,16 +1515,31 @@ export default function PharmacistDashboard() {
   const [rxLoading, setRxLoading] = useState(false)
   const lastSearch = useRef('')
 
-  // Reports state
-  const [missingMeds, setMissingMeds] = useState<string[]>([])
+  // Reports state — persisted per-day in localStorage
+  const TODAY = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+  const STORAGE_KEY = 'pharma_missing_meds'
+
+  const [missingMeds, setMissingMeds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return []
+      const parsed = JSON.parse(raw) as { date: string; meds: string[] }
+      return parsed.date === TODAY ? parsed.meds : []
+    } catch {
+      return []
+    }
+  })
   const [lastScanTime, setLastScanTime] = useState<Date | null>(null)
   const inventoryRef = useRef<PharmacyInventoryItem[]>([])
 
-  // Map hash → tab value
-  const hashTab = location.hash === '#dispense' ? 'dispense'
-    : location.hash === '#history' ? 'history'
-    : location.hash === '#reports' ? 'reports'
-    : 'inventory'
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: TODAY, meds: missingMeds }))
+  }, [missingMeds, TODAY])
+
+  // Map hash → controlled tab value
+  const PHARMA_TABS = ['inventory', 'dispense', 'history', 'reports']
+  const hashTab = location.hash.replace('#', '')
+  const activeTab = PHARMA_TABS.includes(hashTab) ? hashTab : 'inventory'
 
   const fetchInventory = useCallback(async () => {
     setLoadingInventory(true)
@@ -1195,8 +1618,8 @@ export default function PharmacistDashboard() {
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl border bg-white p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-              <Package className="h-5 w-5 text-[#0055BB]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-light">
+              <Package className="h-5 w-5 text-accent" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{inventory.length}</p>
@@ -1229,7 +1652,7 @@ export default function PharmacistDashboard() {
       </div>
 
       {/* Main tabs */}
-      <Tabs defaultValue={hashTab} key={hashTab}>
+      <Tabs value={activeTab} onValueChange={tab => navigate(`${location.pathname}#${tab}`, { replace: true })}>
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="inventory" className="gap-2">
             <Package className="h-3.5 w-3.5" />Inventory
@@ -1272,7 +1695,7 @@ export default function PharmacistDashboard() {
             lastScanTime={lastScanTime}
             loading={loadingInventory}
             onRefresh={fetchInventory}
-            onClearMissing={() => setMissingMeds([])}
+            onClearMissing={() => { setMissingMeds([]); localStorage.removeItem(STORAGE_KEY) }}
           />
         </TabsContent>
       </Tabs>

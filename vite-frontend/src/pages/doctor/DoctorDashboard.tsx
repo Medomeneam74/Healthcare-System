@@ -27,15 +27,21 @@ interface DDIEntry {
 }
 
 const SEV_CLASSES: Record<string, string> = {
-  critical: 'bg-red-50 border-red-300 text-red-800',
-  high:     'bg-orange-50 border-orange-300 text-orange-800',
-  moderate: 'bg-yellow-50 border-yellow-300 text-yellow-800',
-  low:      'bg-blue-50 border-blue-300 text-blue-800',
-  none:     'bg-green-50 border-green-300 text-green-800',
-  unknown:  'bg-gray-50 border-gray-300 text-gray-700',
+  critical: 'bg-sev-critical-bg border-sev-critical-line text-sev-critical-fg',
+  high:     'bg-sev-high-bg border-sev-high-line text-sev-high-fg',
+  moderate: 'bg-sev-moderate-bg border-sev-moderate-line text-sev-moderate-fg',
+  low:      'bg-sev-low-bg border-sev-low-line text-sev-low-fg',
+  none:     'bg-sev-none-bg border-sev-none-line text-sev-none-fg',
+  unknown:  'bg-sev-unknown-bg border-sev-unknown-line text-sev-unknown-fg',
 }
-const SEV_ICON: Record<string, string> = {
-  critical: '🔴', high: '🟠', moderate: '🟡', low: '🔵', none: '🟢', unknown: '⚪',
+
+const SEV_DOT_COLOR: Record<string, string> = {
+  critical: 'bg-sev-critical-fg',
+  high:     'bg-sev-high-fg',
+  moderate: 'bg-sev-moderate-fg',
+  low:      'bg-sev-low-fg',
+  none:     'bg-sev-none-fg',
+  unknown:  'bg-sev-unknown-fg',
 }
 
 export default function DoctorDashboard() {
@@ -54,10 +60,10 @@ export default function DoctorDashboard() {
     const found = inventory.find(i =>
       i.name.toLowerCase() === lower || i.genericName?.toLowerCase() === lower
     )
-    if (!found) return { label: 'Not in pharmacy', className: 'bg-gray-100 text-gray-500' }
+    if (!found) return { label: 'Not in pharmacy', className: 'bg-sev-unknown-bg text-sev-unknown-fg' }
     if (!found.isActive || found.quantityInStock <= 0)
-      return { label: 'Out of stock', className: 'bg-red-100 text-red-600' }
-    return { label: `In stock (${found.quantityInStock} ${found.unit ?? 'units'})`, className: 'bg-green-100 text-green-700' }
+      return { label: 'Out of stock', className: 'bg-sev-critical-bg text-sev-critical-fg' }
+    return { label: `In stock (${found.quantityInStock} ${found.unit ?? 'units'})`, className: 'bg-sev-none-bg text-sev-none-fg' }
   }
 
   const resolveInventoryItemId = (name: string): string | undefined => {
@@ -381,8 +387,9 @@ export default function DoctorDashboard() {
 
       resetInlineForm()
       if (selectedPatient) handleSelectPatient(selectedPatient)
-    } catch {
-      toast({ title: 'Failed to add medication', variant: 'error' })
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast({ title: e?.response?.data?.message ?? 'Failed to add medication', variant: 'error' })
     } finally {
       setSavingInlineMed(false)
     }
@@ -411,17 +418,17 @@ export default function DoctorDashboard() {
   return (
     <div className="space-y-6">
       {/* Quick-nav */}
-      <div className="flex gap-2 border-b pb-2">
+      <div className="flex gap-2 border-b border-line pb-2">
         <button
           onClick={() => document.getElementById('patients')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          className="px-4 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+          className="px-4 py-1.5 rounded-md text-sm font-medium text-ink-secondary hover:bg-canvas-subtle transition-colors"
         >
           Patient Queue
         </button>
         {queuePatients.length > 0 && (
           <button
             onClick={() => document.getElementById('ddi-log')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium text-sev-high-fg hover:bg-sev-high-bg transition-colors"
           >
             <AlertTriangle className="h-3.5 w-3.5" />DDI Reports
           </button>
@@ -434,20 +441,20 @@ export default function DoctorDashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ClipboardIcon className="h-4 w-4 text-[#0055BB]" />
+                <ClipboardIcon className="h-4 w-4 text-accent" />
                 Forwarded Patients ({queuePatients.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-muted" />
                 <Input placeholder="Search queue..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
               </div>
               {queuePatients.length === 0 ? (
                 <div className="text-center py-8">
-                  <User className="h-10 w-10 text-gray-200 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">No patients in queue</p>
-                  <p className="text-xs text-gray-300 mt-1">Patients appear here when forwarded by the receptionist</p>
+                  <User className="h-10 w-10 text-ink-faint mx-auto mb-2" />
+                  <p className="text-sm text-ink-muted">No patients in queue</p>
+                  <p className="text-xs text-ink-faint mt-1">Patients appear here when forwarded by the receptionist</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto">
@@ -457,22 +464,22 @@ export default function DoctorDashboard() {
                       onClick={() => handleSelectPatient(p)}
                       className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
                         selectedPatient?._id === p._id
-                          ? 'bg-blue-50 border border-blue-200 shadow-sm'
-                          : 'hover:bg-gray-50 border border-transparent'
+                          ? 'bg-accent-light border border-accent-muted shadow-card'
+                          : 'hover:bg-canvas-subtle border border-transparent'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-50">
-                          <User className="h-5 w-5 text-[#0055BB]" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-light">
+                          <User className="h-5 w-5 text-accent" />
                         </div>
                         <div>
                           <p className="font-medium text-sm">{p.firstName} {p.lastName}</p>
-                          <p className="text-xs text-gray-500">{p.nationalId}</p>
+                          <p className="text-xs text-ink-secondary">{p.nationalId}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {p.bloodType && <Badge variant="outline" className="text-[10px]">{p.bloodType}</Badge>}
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                        <ChevronRight className="h-4 w-4 text-ink-muted" />
                       </div>
                     </div>
                   ))}
@@ -487,16 +494,15 @@ export default function DoctorDashboard() {
           {!selectedPatient ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <FileText className="h-12 w-12 text-gray-200 mb-3" />
-                <p className="text-gray-500 font-medium">Select a patient</p>
-                <p className="text-sm text-gray-400 mt-1">Choose a patient from the queue to view their medical data</p>
+                <FileText className="h-12 w-12 text-ink-faint mb-3" />
+                <p className="text-sm font-medium text-ink">Select a patient</p>
+                <p className="text-sm text-ink-muted mt-1">Choose a patient from the queue to view their medical data</p>
               </CardContent>
             </Card>
           ) : (
             <>
               {/* Patient Profile */}
-              <div className="relative rounded-2xl bg-gradient-to-br from-[#0055BB] via-[#0044a0] to-[#003380] p-5 text-white overflow-hidden shadow-lg">
-                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-16 translate-x-16" />
+              <div className="rounded-xl bg-sidebar p-5 text-white">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-white/20">
@@ -504,8 +510,8 @@ export default function DoctorDashboard() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold">{selectedPatient.firstName} {selectedPatient.lastName}</h3>
-                      <p className="text-blue-200 text-sm">ID: {selectedPatient.nationalId}</p>
-                      <div className="flex flex-wrap gap-3 mt-2 text-xs text-blue-100">
+                      <p className="text-white text-sm font-medium">ID: {selectedPatient.nationalId}</p>
+                      <div className="flex flex-wrap gap-3 mt-2 text-xs text-white/70">
                         {selectedPatient.bloodType && <span className="flex items-center gap-1"><Droplets className="h-3 w-3" />{selectedPatient.bloodType}</span>}
                         <span>{selectedPatient.gender}</span>
                         {selectedPatient.dateOfBirth && <span>{new Date(selectedPatient.dateOfBirth).toLocaleDateString()}</span>}
@@ -542,25 +548,25 @@ export default function DoctorDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Heart className="h-4 w-4 text-[#0055BB]" />
+                    <Heart className="h-4 w-4 text-accent" />
                     Medical Records ({patientRecords.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {loadingRecords ? <Spinner size="sm" /> : patientRecords.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-6">No medical records found</p>
+                    <p className="text-sm text-ink-muted text-center py-6">No medical records found</p>
                   ) : (
                     <div className="space-y-3">
                       {patientRecords.map(r => (
                         <div key={r._id} className="p-4 border rounded-xl space-y-2">
                           <div className="flex items-start justify-between">
                             <div>
-                              <p className="font-semibold text-sm text-gray-900">{r.diagnosis}</p>
-                              {r.treatment && <p className="text-xs text-gray-500 mt-0.5">Treatment: {r.treatment}</p>}
+                              <p className="font-semibold text-sm text-ink">{r.diagnosis}</p>
+                              {r.treatment && <p className="text-xs text-ink-secondary mt-0.5">Treatment: {r.treatment}</p>}
                             </div>
                             <div className="flex items-center gap-2">
                               {r.aiAnalysis && <SeverityBadge severity={r.aiAnalysis.severity} />}
-                              <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                              <span className="text-[10px] text-ink-muted flex items-center gap-1">
                                 <Clock className="h-3 w-3" />{new Date(r.createdAt).toLocaleDateString()}
                               </span>
                             </div>
@@ -568,13 +574,13 @@ export default function DoctorDashboard() {
                           {r.medications?.length > 0 && (
                             <div className="flex flex-wrap gap-2">
                               {r.medications.map((med, i) => (
-                                <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 rounded-full pl-2.5 pr-1 py-1 text-xs font-medium">
+                                <span key={i} className="inline-flex items-center gap-1 bg-accent-light text-accent rounded-full pl-2.5 pr-1 py-1 text-xs font-medium">
                                   <Pill className="h-3 w-3" />
                                   {med.name} {med.dosage || med.dose || ''}
                                   {isOwnRecord(r) && (
                                     <button
                                       onClick={() => handleRemoveMedication(r, i)}
-                                      className="ml-1 p-0.5 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
+                                      className="ml-1 p-0.5 rounded-full hover:bg-sev-critical-bg text-ink-muted hover:text-sev-critical-fg transition-colors"
                                       title="Remove medication"
                                     >
                                       <X className="h-3 w-3" />
@@ -585,18 +591,18 @@ export default function DoctorDashboard() {
                             </div>
                           )}
                           {r.aiAnalysis?.hasConflict && (
-                            <div className="rounded-lg bg-orange-50 border border-orange-200 p-2.5">
-                              <div className="flex items-center gap-1.5 text-orange-700 text-xs font-semibold mb-1">
+                            <div className="rounded-lg bg-sev-high-bg border border-sev-high-line p-2.5">
+                              <div className="flex items-center gap-1.5 text-sev-high-fg text-xs font-semibold mb-1">
                                 <AlertTriangle className="h-3.5 w-3.5" />AI Drug Interaction Alert
                               </div>
-                              <p className="text-xs text-orange-600">{r.aiAnalysis.analysis}</p>
+                              <p className="text-xs text-sev-high-fg">{r.aiAnalysis.analysis}</p>
                             </div>
                           )}
 
                           {/* Add medication to existing record — only for records this doctor created */}
                           {isOwnRecord(r) && expandedRecordId === r._id ? (
                             <div className="pt-2 border-t space-y-2">
-                              <p className="text-xs font-semibold text-gray-600">Add medication to this record</p>
+                              <p className="text-xs font-semibold text-ink-secondary">Add medication to this record</p>
 
                               {/* Input fields — hidden once DDI results are shown */}
                               {inlineDdiState !== 'reviewed' && (
@@ -627,9 +633,9 @@ export default function DoctorDashboard() {
                                       id="inline-send-pharmacist"
                                       checked={inlineSendToPharmacist}
                                       onChange={e => setInlineSendToPharmacist(e.target.checked)}
-                                      className="h-4 w-4 rounded accent-[#0055BB] cursor-pointer"
+                                      className="h-4 w-4 rounded accent-accent cursor-pointer"
                                     />
-                                    <label htmlFor="inline-send-pharmacist" className="text-xs font-medium text-gray-700 cursor-pointer select-none">
+                                    <label htmlFor="inline-send-pharmacist" className="text-xs font-medium text-ink cursor-pointer select-none">
                                       Also send prescription to pharmacist
                                     </label>
                                   </div>
@@ -659,21 +665,24 @@ export default function DoctorDashboard() {
 
                               {/* DDI results */}
                               {inlineDdiState === 'reviewed' && (
-                                <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50/60 p-2.5">
-                                  <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                                    <AlertTriangle className="h-3.5 w-3.5 text-[#0055BB]" />
-                                    Interaction results for <span className="text-gray-900">{inlineMed.name}</span>
+                                <div className="space-y-2 rounded-lg border border-line bg-canvas-subtle p-2.5">
+                                  <p className="text-xs font-semibold text-ink-secondary flex items-center gap-1.5">
+                                    <AlertTriangle className="h-3.5 w-3.5 text-sev-high-fg" />
+                                    Interaction results for <span className="text-ink">{inlineMed.name}</span>
                                   </p>
                                   {inlineDdiEntries.length === 0 && !inlineDdiServiceWarning ? (
-                                    <div className="flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 px-2.5 py-2">
-                                      <span>🟢</span>
-                                      <p className="text-xs font-medium text-green-800">No interactions detected — safe to proceed</p>
+                                    <div className="flex items-center gap-2 rounded-lg border border-sev-none-line bg-sev-none-bg px-2.5 py-2">
+                                      <SevDot severity="none" />
+                                      <p className="text-xs font-medium text-sev-none-fg">No interactions detected — safe to proceed</p>
                                     </div>
                                   ) : (
                                     <div className="space-y-1.5">
                                       {inlineDdiEntries.map((entry, i) => (
                                         <div key={i} className={`rounded-lg border p-2 text-xs ${SEV_CLASSES[entry.severity] ?? SEV_CLASSES.unknown}`}>
-                                          <p className="font-semibold">{SEV_ICON[entry.severity] ?? '⚪'} {entry.medication} — {entry.severity} risk</p>
+                                          <p className="font-semibold flex items-center gap-1.5">
+                                            <SevDot severity={entry.severity} />
+                                            {entry.medication} — {entry.severity} risk
+                                          </p>
                                           {entry.hasConflict && entry.analysis && <p className="mt-1">{entry.analysis}</p>}
                                           {entry.recommendations?.map((rec, j) => (
                                             <p key={j} className="mt-0.5 flex items-start gap-1">
@@ -683,7 +692,7 @@ export default function DoctorDashboard() {
                                         </div>
                                       ))}
                                       {inlineDdiServiceWarning && (
-                                        <p className="text-xs text-amber-600 flex items-center gap-1">
+                                        <p className="text-xs text-sev-high-fg flex items-center gap-1">
                                           <AlertTriangle className="h-3 w-3 flex-shrink-0" />DDI service unavailable — verify manually.
                                         </p>
                                       )}
@@ -711,7 +720,7 @@ export default function DoctorDashboard() {
                           ) : isOwnRecord(r) ? (
                             <button
                               onClick={() => { setExpandedRecordId(r._id); setInlineMed({ name: '', dosage: '', frequency: '', duration: '' }); setInlineDdiState(null); setInlineDdiEntries([]); setInlineDdiServiceWarning(false) }}
-                              className="mt-1 flex items-center gap-1 text-xs text-[#0055BB] hover:underline"
+                              className="mt-1 flex items-center gap-1 text-xs text-accent hover:underline"
                             >
                               <Plus className="h-3 w-3" />Add medication to this record
                             </button>
@@ -727,7 +736,7 @@ export default function DoctorDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Plus className="h-4 w-4 text-[#0055BB]" />
+                    <Plus className="h-4 w-4 text-accent" />
                     Add Medical Record
                   </CardTitle>
                 </CardHeader>
@@ -745,12 +754,12 @@ export default function DoctorDashboard() {
 
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5">
-                      <Pill className="h-3.5 w-3.5 text-[#0055BB]" />Medications
+                      <Pill className="h-3.5 w-3.5 text-accent" />Medications
                     </Label>
                     {newMeds.map((med, i) => {
                       const avail = getMedAvailability(med.name)
                       return (
-                      <div key={i} className="space-y-1.5 p-2.5 border rounded-lg bg-gray-50/50">
+                      <div key={i} className="space-y-1.5 p-2.5 border rounded-lg bg-canvas-subtle">
                         <div className="flex gap-2 items-center">
                           <div className="flex-1 space-y-1">
                             <Input
@@ -807,9 +816,9 @@ export default function DoctorDashboard() {
                           setDdiServiceWarning(false)
                         }
                       }}
-                      className="h-4 w-4 rounded accent-[#0055BB] cursor-pointer"
+                      className="h-4 w-4 rounded accent-accent cursor-pointer"
                     />
-                    <label htmlFor="send-pharmacist" className="text-sm font-medium text-gray-700 cursor-pointer select-none">
+                    <label htmlFor="send-pharmacist" className="text-sm font-medium text-ink cursor-pointer select-none">
                       Also send prescription to pharmacist
                     </label>
                   </div>
@@ -824,21 +833,24 @@ export default function DoctorDashboard() {
 
                   {/* DDI results panel — always shown after check, doctor must confirm */}
                   {ddiCheckState === 'reviewed' && (
-                    <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
-                      <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-[#0055BB]" />Drug Interaction Results
+                    <div className="space-y-3 rounded-xl border border-line bg-canvas-subtle p-3">
+                      <p className="text-sm font-semibold text-ink flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-sev-high-fg" />Drug Interaction Results
                       </p>
 
                       {ddiEntries.length === 0 && !ddiServiceWarning ? (
-                        <div className="rounded-lg border border-green-300 bg-green-50 px-3 py-2.5 flex items-center gap-2">
-                          <span>🟢</span>
-                          <p className="text-sm font-medium text-green-800">No interactions detected — safe to proceed</p>
+                        <div className="rounded-lg border border-sev-none-line bg-sev-none-bg px-3 py-2.5 flex items-center gap-2">
+                          <SevDot severity="none" />
+                          <p className="text-sm font-medium text-sev-none-fg">No interactions detected — safe to proceed</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
                           {ddiEntries.map((r, i) => (
                             <div key={i} className={`rounded-lg border p-2.5 text-xs ${SEV_CLASSES[r.severity] ?? SEV_CLASSES.unknown}`}>
-                              <p className="font-semibold">{SEV_ICON[r.severity] ?? '⚪'} {r.medication} — {r.severity} risk</p>
+                              <p className="font-semibold flex items-center gap-1.5">
+                                <SevDot severity={r.severity} />
+                                {r.medication} — {r.severity} risk
+                              </p>
                               {r.hasConflict && r.analysis && <p className="mt-1">{r.analysis}</p>}
                               {r.recommendations?.map((rec, j) => (
                                 <p key={j} className="mt-0.5 flex items-start gap-1">
@@ -848,7 +860,7 @@ export default function DoctorDashboard() {
                             </div>
                           ))}
                           {ddiServiceWarning && (
-                            <p className="text-xs text-amber-600 flex items-center gap-1">
+                            <p className="text-xs text-sev-high-fg flex items-center gap-1">
                               <AlertTriangle className="h-3 w-3 flex-shrink-0" />
                               Some medications could not be checked — verify manually.
                             </p>
@@ -938,21 +950,27 @@ export default function DoctorDashboard() {
   )
 }
 
+const SEV_BADGE_VARIANT: Record<string, Parameters<typeof Badge>[0]['variant']> = {
+  critical: 'critical',
+  high:     'warning',
+  moderate: 'moderate',
+  low:      'low',
+  none:     'safe',
+  unknown:  'unknown',
+}
+
 function SeverityBadge({ severity }: { severity?: string }) {
   const s = (severity ?? 'unknown').toLowerCase()
-  const classes: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700',
-    high:     'bg-orange-100 text-orange-700',
-    moderate: 'bg-yellow-100 text-yellow-700',
-    low:      'bg-blue-100 text-blue-700',
-    none:     'bg-green-100 text-green-700',
-    unknown:  'bg-gray-100 text-gray-600',
-  }
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${classes[s] ?? classes.unknown}`}>
+    <Badge variant={SEV_BADGE_VARIANT[s] ?? 'unknown'} className="text-[10px] capitalize">
       {s}
-    </span>
+    </Badge>
   )
+}
+
+function SevDot({ severity }: { severity: string }) {
+  const color = SEV_DOT_COLOR[severity.toLowerCase()] ?? SEV_DOT_COLOR.unknown
+  return <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${color}`} aria-hidden="true" />
 }
 
 function ClipboardIcon({ className }: { className?: string }) {

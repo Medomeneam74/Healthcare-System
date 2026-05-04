@@ -13,7 +13,7 @@ export function Table({ className, ...props }: React.HTMLAttributes<HTMLTableEle
 }
 
 export function TableHeader({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={twMerge('[&_tr]:border-b', className)} {...props} />
+  return <thead className={twMerge('[&_tr]:border-b [&_tr]:border-line', className)} {...props} />
 }
 
 export function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
@@ -22,11 +22,22 @@ export function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTabl
   )
 }
 
-export function TableRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
+const rowUrgency = {
+  critical: 'bg-sev-critical-bg border-l-2 border-l-sev-critical-fg hover:bg-sev-critical-bg',
+  warning:  'bg-sev-high-bg border-l-2 border-l-sev-high-fg hover:bg-sev-high-bg',
+  safe:     'bg-sev-none-bg hover:bg-sev-none-bg',
+} as const
+
+export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+  urgency?: keyof typeof rowUrgency
+}
+
+export function TableRow({ className, urgency, ...props }: TableRowProps) {
   return (
     <tr
       className={twMerge(
-        'border-b border-gray-100 transition-colors hover:bg-gray-50/50 data-[state=selected]:bg-blue-50',
+        'border-b border-line-subtle transition-colors hover:bg-canvas-subtle data-[state=selected]:bg-accent-light',
+        urgency && rowUrgency[urgency],
         className
       )}
       {...props}
@@ -38,7 +49,7 @@ export function TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTa
   return (
     <th
       className={twMerge(
-        'h-10 px-4 text-left align-middle font-medium text-gray-500 text-xs uppercase tracking-wide [&:has([role=checkbox])]:pr-0',
+        'h-10 px-4 text-left align-middle font-medium text-ink-muted text-xs uppercase tracking-wide [&:has([role=checkbox])]:pr-0',
         className
       )}
       {...props}
@@ -49,7 +60,7 @@ export function TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTa
 export function TableCell({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
     <td
-      className={twMerge('px-4 py-3 align-middle [&:has([role=checkbox])]:pr-0 text-sm text-gray-700', className)}
+      className={twMerge('px-4 py-3 align-middle [&:has([role=checkbox])]:pr-0 text-sm text-ink-secondary', className)}
       {...props}
     />
   )
@@ -58,7 +69,7 @@ export function TableCell({ className, ...props }: React.TdHTMLAttributes<HTMLTa
 export function TableCaption({ className, ...props }: React.HTMLAttributes<HTMLTableCaptionElement>) {
   return (
     <caption
-      className={twMerge('mt-4 text-sm text-gray-500', className)}
+      className={twMerge('mt-4 text-sm text-ink-secondary', className)}
       {...props}
     />
   )

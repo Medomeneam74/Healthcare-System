@@ -21,7 +21,8 @@
       "Bash(Select-Object Name)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\IT STORE\\\\Desktop\\\\Nfc-healthcare-card-main\" -Recurse -Filter \"*pharmacy*\" -ErrorAction SilentlyContinue)",
       "Bash(Select-Object FullName)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\IT STORE\\\\Desktop\\\\Nfc-healthcare-card-main\\\\vite-frontend\\\\src\" -Recurse -Filter \"*.tsx\")"
     ]
   }
 }

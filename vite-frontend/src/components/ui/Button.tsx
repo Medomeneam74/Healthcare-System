@@ -4,20 +4,20 @@ import { Slot } from '@radix-ui/react-slot'
 import { twMerge } from 'tailwind-merge'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0055BB] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap text-sm',
+  'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-[color,background-color,border-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 whitespace-nowrap text-sm',
   {
     variants: {
       variant: {
-        default: 'bg-[#0055BB] text-white hover:bg-[#0044a0] active:bg-[#003380]',
-        outline: 'border border-[#0055BB] text-[#0055BB] bg-transparent hover:bg-[#E8F0FE]',
-        ghost: 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
-        destructive: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
-        secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300',
+        default:     'bg-accent text-accent-fg hover:bg-accent-hover active:bg-accent-active',
+        outline:     'border border-accent text-accent bg-transparent hover:bg-accent-light',
+        ghost:       'text-ink-secondary hover:bg-canvas-subtle hover:text-ink',
+        destructive: 'bg-danger text-danger-fg hover:bg-danger-hover',
+        secondary:   'bg-canvas-subtle text-ink border border-line hover:bg-canvas-deep',
       },
       size: {
-        sm: 'h-8 px-3 text-xs',
-        md: 'h-9 px-4',
-        lg: 'h-11 px-6 text-base',
+        sm:   'h-8 px-3 text-xs',
+        md:   'h-9 px-4',
+        lg:   'h-11 px-6 text-base',
         icon: 'h-9 w-9 p-0',
       },
     },

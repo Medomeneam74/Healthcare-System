@@ -9,11 +9,13 @@ interface HeaderProps {
 }
 
 const ROUTE_TITLES: Record<string, string> = {
-  '/patient/health-passport': 'Health Passport',
-  '/doctor/dashboard': 'Clinical Dashboard',
-  '/receptionist/dashboard': 'Receptionist Portal',
-  '/admin-hospital/staff': 'Staff Management',
-  '/admin/facilities': 'Facility Management',
+  '/patient/health-passport':  'Health Passport',
+  '/doctor/dashboard':         'Clinical Dashboard',
+  '/receptionist/dashboard':   'Receptionist Portal',
+  '/admin-hospital/staff':     'Staff Management',
+  '/admin/facilities':         'Facility Management',
+  '/pharmacist/dashboard':     'Pharmacy',
+  '/profile':                  'Profile',
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
@@ -21,36 +23,38 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { toast } = useToast()
   const location = useLocation()
   const title = ROUTE_TITLES[location.pathname] ?? 'NFC Healthcare'
+
   const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
   const displayName = user?.name ?? (fullName || (user?.email ?? 'User'))
+  const initial = displayName.charAt(0).toUpperCase()
 
   return (
-    <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
+    <header className="flex h-13 flex-shrink-0 items-center justify-between border-b border-line bg-canvas-raised px-4 lg:px-6" style={{ height: '52px' }}>
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+          className="lg:hidden p-1.5 rounded-md text-ink-muted hover:bg-canvas-subtle hover:text-ink transition-colors"
           aria-label="Toggle menu"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="text-base font-semibold text-gray-900">{title}</h1>
+        <h1 className="text-sm font-semibold text-ink">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1">
         <button
-          className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+          className="p-1.5 rounded-md text-ink-muted hover:bg-canvas-subtle hover:text-ink transition-colors"
           aria-label="Notifications"
           onClick={() => toast({ title: 'No new notifications', variant: 'default' })}
         >
-          <Bell className="h-5 w-5" />
+          <Bell className="h-4.5 w-4.5" style={{ width: '1.0625rem', height: '1.0625rem' }} />
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0055BB] text-white text-sm font-bold">
-            {displayName.charAt(0).toUpperCase()}
+        <div className="ml-1 flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-accent-fg text-xs font-semibold">
+            {initial}
           </div>
-          <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-[120px] truncate">
+          <span className="hidden sm:block text-sm text-ink-secondary max-w-[120px] truncate">
             {displayName}
           </span>
         </div>

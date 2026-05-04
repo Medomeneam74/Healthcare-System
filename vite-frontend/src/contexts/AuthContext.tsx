@@ -92,7 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: profile.email,
         role: profile.role as Role,
         hospitalId: profile.hospitalId,
-        specialization: profile.specialization,
+        department: profile.department,
+      }
+      if (userData.role === 'patient') {
+        localStorage.removeItem('nfc_token')
+        throw new Error('Patient accounts must use the Patient tab to sign in.')
       }
       if (userData.role === 'super_admin') {
         localStorage.removeItem('nfc_token')

@@ -266,7 +266,7 @@ export const getPendingPrescriptionsByPatient = async (req, res, next) => {
         hospitalId,
         status: "pending_pickup",
     })
-        .populate("doctorId", "firstName lastName specialization")
+        .populate("doctorId", "firstName lastName department")
         .populate("medications.inventoryItemId", "name genericName unit")
         .sort({ createdAt: -1 });
 
@@ -379,7 +379,7 @@ export const getPrescriptionHistory = async (req, res, next) => {
         patientId: patient._id,
         hospitalId,
     })
-        .populate("doctorId", "firstName lastName specialization")
+        .populate("doctorId", "firstName lastName department")
         .populate("dispensedBy", "fullName email")
         .populate("medications.inventoryItemId", "name genericName unit")
         .sort({ createdAt: -1 });

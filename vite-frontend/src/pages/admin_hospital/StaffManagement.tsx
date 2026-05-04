@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { UserPlus, Trash2, Stethoscope, LayoutDashboard, UserCog, ShieldAlert, Mail, ShieldCheck, Clock, Beaker, Building2, Plus } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -60,6 +61,32 @@ export default function StaffManagement() {
   const [addingDept, setAddingDept] = useState(false)
   const [deleteDeptName, setDeleteDeptName] = useState<string | null>(null)
   const [deletingDept, setDeletingDept] = useState(false)
+
+  // Department assignment dialog
+  const [deptDoctor, setDeptDoctor] = useState<Doctor | null>(null)
+  const [deptAssign, setDeptAssign] = useState('')
+  const [savingDept, setSavingDept] = useState(false)
+
+  const openDeptDialog = (d: Doctor) => {
+    setDeptDoctor(d)
+    setDeptAssign(d.department ?? '')
+  }
+
+  const handleSaveDepartment = async () => {
+    if (!deptDoctor) return
+    setSavingDept(true)
+    try {
+      await client.put(`/admin-hospital/doctor/${deptDoctor._id}/department`, { department: deptAssign })
+      setDoctors(prev => prev.map(d => d._id === deptDoctor._id ? { ...d, department: deptAssign } : d))
+      toast({ title: 'Department assigned', variant: 'success' })
+      setDeptDoctor(null)
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast({ title: e?.response?.data?.message ?? 'Failed to assign department', variant: 'error' })
+    } finally {
+      setSavingDept(false)
+    }
+  }
 
   // Working hours dialog
   const DAYS: WeekDay[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -381,7 +408,7 @@ export default function StaffManagement() {
                         </div>
                         <div>
                           <p className="text-sm font-medium">Dr. {d.firstName} {d.lastName}</p>
-                          <p className="text-xs text-gray-400">{d.specialization ?? 'General'}</p>
+                          <p className="text-xs text-gray-400">{d.department ?? 'Unassigned'}</p>
                         </div>
                         <Badge variant={d.isVerified ? 'success' : 'secondary'} className="ml-auto">
                           {d.isVerified ? 'Verified' : 'Pending'}
@@ -595,16 +622,22 @@ export default function StaffManagement() {
               ) : (() => {
                 const grouped: Record<string, Doctor[]> = {}
                 doctors.forEach(d => {
-                  const dept = d.specialization ?? 'General'
+                  const dept = d.department ?? 'Unassigned'
                   if (!grouped[dept]) grouped[dept] = []
                   grouped[dept].push(d)
                 })
+                // Sort: named departments first (alphabetically), Unassigned last
+                const sortedEntries = Object.entries(grouped).sort(([a], [b]) => {
+                  if (a === 'Unassigned') return 1
+                  if (b === 'Unassigned') return -1
+                  return a.localeCompare(b)
+                })
                 return (
                   <div className="space-y-6">
-                    {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([dept, deptDoctors]) => (
+                    {sortedEntries.map(([dept, deptDoctors]) => (
                       <div key={dept}>
                         <div className="flex items-center gap-2 mb-3">
-                          <Stethoscope className="h-4 w-4 text-[#0055BB]" />
+                          <Building2 className="h-4 w-4 text-accent" />
                           <h3 className="text-sm font-semibold text-gray-700">{dept}</h3>
                           <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
                             {deptDoctors.length} doctor{deptDoctors.length !== 1 ? 's' : ''}
@@ -619,11 +652,24 @@ export default function StaffManagement() {
                                     Dr. {d.firstName} {d.lastName}
                                   </p>
                                   <p className="text-xs text-gray-400 truncate">{d.email}</p>
+                                  {d.department && (
+                                    <p className="text-xs text-accent truncate">{d.department}</p>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                   <Badge variant={d.isVerified ? 'success' : 'secondary'} className="text-xs">
                                     {d.isVerified ? 'Verified' : 'Pending'}
                                   </Badge>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="text-accent hover:bg-accent-light h-7 w-7"
+                                    aria-label="Assign department"
+                                    title="Assign department"
+                                    onClick={() => openDeptDialog(d)}
+                                  >
+                                    <Building2 className="h-3.5 w-3.5" />
+                                  </Button>
                                   <Button
                                     size="icon"
                                     variant="ghost"
@@ -724,7 +770,7 @@ export default function StaffManagement() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50">
-                                <Building2 className="h-4 w-4 text-[#0055BB]" />
+                                <Building2 className="h-4 w-4 text-accent" />
                               </div>
                               <span className="font-medium text-gray-900">{dept.name}</span>
                             </div>
@@ -792,12 +838,51 @@ export default function StaffManagement() {
         loading={deletingDept}
       />
 
+      {/* Department Assignment Dialog */}
+      <Dialog open={!!deptDoctor} onOpenChange={open => { if (!open) setDeptDoctor(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-accent" />
+              Assign Department — Dr. {deptDoctor?.firstName} {deptDoctor?.lastName}
+            </DialogTitle>
+            <DialogDescription>Select which department this doctor belongs to</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            {departments.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">
+                No departments yet — add some in the Departments tab first.
+              </p>
+            ) : (
+              <Select value={deptAssign} onValueChange={setDeptAssign}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => (
+                    <SelectItem key={d.name} value={d.name}>
+                      {d.name}{d.floor ? ` — ${d.floor}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeptDoctor(null)}>Cancel</Button>
+            <Button onClick={handleSaveDepartment} disabled={savingDept || !deptAssign || departments.length === 0}>
+              {savingDept ? <Spinner size="sm" /> : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Working Hours Dialog */}
       <Dialog open={!!hoursDoctor} onOpenChange={open => { if (!open) setHoursDoctor(null) }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-[#0055BB]" />
+              <Clock className="h-4 w-4 text-accent" />
               Working Hours — Dr. {hoursDoctor?.firstName} {hoursDoctor?.lastName}
             </DialogTitle>
             <DialogDescription>Check the days this doctor works and set their shift times</DialogDescription>
@@ -810,7 +895,7 @@ export default function StaffManagement() {
                   id={`day-${entry.day}`}
                   checked={entry.enabled}
                   onChange={e => setHoursField(entry.day, 'enabled', e.target.checked)}
-                  className="h-4 w-4 rounded accent-[#0055BB] cursor-pointer"
+                  className="h-4 w-4 rounded accent-accent cursor-pointer"
                 />
                 <label htmlFor={`day-${entry.day}`} className="w-24 text-sm font-medium text-gray-700 cursor-pointer select-none">
                   {entry.day}
@@ -821,7 +906,7 @@ export default function StaffManagement() {
                     value={entry.start}
                     disabled={!entry.enabled}
                     onChange={e => setHoursField(entry.day, 'start', e.target.value)}
-                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#0055BB]"
+                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                   <span className="text-xs text-gray-400">to</span>
                   <input
@@ -829,7 +914,7 @@ export default function StaffManagement() {
                     value={entry.end}
                     disabled={!entry.enabled}
                     onChange={e => setHoursField(entry.day, 'end', e.target.value)}
-                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#0055BB]"
+                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
               </div>
@@ -877,7 +962,7 @@ export default function StaffManagement() {
             <div className="text-center">
               <button
                 type="button"
-                className="text-xs text-gray-400 hover:text-[#0055BB] transition-colors disabled:opacity-50"
+                className="text-xs text-gray-400 hover:text-accent transition-colors disabled:opacity-50"
                 disabled={resendingOtp}
                 onClick={handleResendOtp}
               >
@@ -990,7 +1075,7 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
           onChange={e => handleChange(i, e.target.value)}
           onKeyDown={e => handleKeyDown(i, e)}
           onPaste={handlePaste}
-          className="h-12 w-10 rounded-lg border border-gray-300 bg-white text-center text-xl font-bold text-gray-800 shadow-sm transition-colors focus:border-[#0055BB] focus:outline-none focus:ring-2 focus:ring-[#0055BB]/20"
+          className="h-12 w-10 rounded-lg border border-gray-300 bg-white text-center text-xl font-bold text-gray-800 shadow-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
         />
       ))}
     </div>

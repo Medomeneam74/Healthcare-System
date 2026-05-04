@@ -80,6 +80,37 @@ export const assignCardToPatient = async (req, res, next) => {
   });
 };
 
+// Reassign patient from one doctor to another (receptionist)
+export const reassignPatientToDoctor = async (req, res, next) => {
+  const { patientId, fromDoctorId, toDoctorId } = req.body;
+
+  const [fromDoctor, toDoctor, patient] = await Promise.all([
+    Doctor.findById(fromDoctorId),
+    Doctor.findById(toDoctorId),
+    Patient.findById(patientId),
+  ]);
+
+  if (!fromDoctor) return next(new AppError(messages.doctor.notExist, 404));
+  if (!toDoctor)   return next(new AppError(messages.doctor.notExist, 404));
+  if (!patient)    return next(new AppError(messages.patient.notExist, 404));
+
+  // Remove from old doctor
+  fromDoctor.patients = fromDoctor.patients.filter(id => id.toString() !== patientId.toString());
+
+  // Add to new doctor if not already there
+  if (!toDoctor.patients.map(id => id.toString()).includes(patientId.toString())) {
+    toDoctor.patients.push(patientId);
+  }
+
+  await Promise.all([fromDoctor.save(), toDoctor.save()]);
+
+  res.status(200).json({
+    success: true,
+    message: 'Patient reassigned successfully',
+    data: { patientId, fromDoctorId, toDoctorId },
+  });
+};
+
 // Dismiss patient from doctor's forwarded queue (after consultation)
 export const dismissPatient = async (req, res, next) => {
   const doctorId = req.authUser._id;

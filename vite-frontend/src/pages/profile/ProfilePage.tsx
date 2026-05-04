@@ -62,7 +62,7 @@ export default function ProfilePage() {
     { icon: CreditCard, label: 'National ID', value: profile?.nationalId as string },
     { icon: Calendar, label: 'Date of Birth', value: profile?.dateOfBirth ? new Date(profile.dateOfBirth as string).toLocaleDateString() : undefined },
     { icon: Droplets, label: 'Blood Type', value: profile?.bloodType as string },
-    { icon: Briefcase, label: 'Specialization', value: profile?.specialization as string },
+    { icon: Briefcase, label: 'Department', value: profile?.department as string },
     { icon: Building2, label: 'Hospital', value: hospitalName ?? undefined },
     { icon: ShieldCheck, label: 'License Number', value: profile?.licenseNumber as string },
   ].filter(f => f.value)
@@ -77,12 +77,12 @@ export default function ProfilePage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-5">
-            <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0055BB] to-[#003380] text-white text-2xl font-bold">
+            <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-active text-white text-2xl font-bold">
               {initials}
             </div>
             <div className="space-y-1">
               <h1 className="text-xl font-bold text-gray-900">{fullName}</h1>
-              <Badge className="bg-[#0055BB]/10 text-[#0055BB] border-0 font-medium">
+              <Badge className="bg-accent/10 text-accent border-0 font-medium">
                 {ROLE_LABELS[role] ?? role}
               </Badge>
               {(profile?.email as string) && (
@@ -98,7 +98,7 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-4 w-4 text-[#0055BB]" />Account Details
+              <User className="h-4 w-4 text-accent" />Account Details
             </CardTitle>
           </CardHeader>
           <CardContent>
