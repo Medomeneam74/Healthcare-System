@@ -138,7 +138,7 @@ chatbotRouter.post(
             MedicalRecord.find(medRecordFilter(resolvedPatientId))
                 .sort({ createdAt: -1 })
                 .limit(20)
-                .populate('doctorId', 'firstName lastName specialization')
+                .populate('doctorId', 'firstName lastName department')
                 .populate('hospitalId', 'name')
                 .lean(),
         ]);
@@ -178,7 +178,7 @@ chatbotRouter.post(
             })),
             doctor: r.doctorId
                 ? `Dr. ${r.doctorId.firstName} ${r.doctorId.lastName}` +
-                  (r.doctorId.specialization ? ` (${r.doctorId.specialization})` : '')
+                  (r.doctorId.department ? ` (${r.doctorId.department})` : '')
                 : null,
             hospital: r.hospitalId?.name || null,
             drugInteractionAlert: r.aiAnalysis?.hasConflict

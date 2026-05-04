@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   FileText,
   Building2,
-  ShieldCheck,
   UserPlus,
   Stethoscope,
   ClipboardList,
@@ -15,10 +14,11 @@ import {
   UserCog,
   Package,
   FlaskConical,
+  CreditCard,
+  BarChart2,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import type { Role } from '@/types'
-import { Badge } from '@/components/ui/Badge'
 
 interface NavItem {
   label: string
@@ -35,37 +35,43 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'DDI Reports', to: '/doctor/dashboard#ddi-log', icon: AlertTriangle },
   ],
   receptionist: [
-    { label: 'Queue Manager', to: '/receptionist/dashboard', icon: ClipboardList },
+    { label: 'Queue Manager', to: '/receptionist/dashboard#queue', icon: ClipboardList },
     { label: 'Doctors', to: '/receptionist/dashboard#doctors', icon: Stethoscope },
   ],
   admin_hospital: [
-    { label: 'Staff Dashboard', to: '/admin-hospital/staff', icon: LayoutDashboard },
+    { label: 'Overview', to: '/admin-hospital/staff#overview', icon: LayoutDashboard },
     { label: 'Receptionists', to: '/admin-hospital/staff#receptionists', icon: UserCog },
     { label: 'Pharmacists', to: '/admin-hospital/staff#pharmacists', icon: FlaskConical },
     { label: 'Doctors', to: '/admin-hospital/staff#doctors', icon: Stethoscope },
+    { label: 'Departments', to: '/admin-hospital/staff#departments', icon: Building2 },
   ],
   admin: [
     { label: 'Overview', to: '/admin/facilities#overview', icon: LayoutDashboard },
-    { label: 'Facilities', to: '/admin/facilities', icon: Building2 },
+    { label: 'Hospitals', to: '/admin/facilities#hospitals', icon: Building2 },
     { label: 'Hospital Admins', to: '/admin/facilities#admins', icon: UserCog },
+    { label: 'NFC Cards', to: '/admin/facilities#cards', icon: CreditCard },
   ],
   super_admin: [],
   pharmacist: [
     { label: 'Inventory', to: '/pharmacist/dashboard#inventory', icon: Package },
     { label: 'Dispense', to: '/pharmacist/dashboard#dispense', icon: ClipboardList },
     { label: 'History', to: '/pharmacist/dashboard#history', icon: FileText },
+    { label: 'Reports', to: '/pharmacist/dashboard#reports', icon: BarChart2 },
   ],
 }
 
 const ROLE_LABELS: Record<Role, string> = {
-  patient: 'Patient',
-  doctor: 'Doctor',
-  receptionist: 'Receptionist',
+  patient:        'Patient',
+  doctor:         'Doctor',
+  receptionist:   'Receptionist',
   admin_hospital: 'Hospital Admin',
-  admin: 'Administrator',
-  super_admin: 'Super Admin',
-  pharmacist: 'Pharmacist',
+  admin:          'Administrator',
+  super_admin:    'Super Admin',
+  pharmacist:     'Pharmacist',
 }
+
+const BASE_NAV =
+  'relative w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-[color,background-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]'
 
 interface SidebarProps {
   onClose?: () => void
@@ -81,92 +87,91 @@ export function Sidebar({ onClose }: SidebarProps) {
 
   const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
   const displayName = user?.name ?? (fullName || (user?.email ?? 'User'))
+  const initial = displayName.charAt(0).toUpperCase()
 
   return (
-    <div className="flex h-full flex-col bg-[#0F172A] text-white">
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0055BB]">
-          <Activity className="h-5 w-5 text-white" />
+    <div className="flex h-full flex-col bg-sidebar">
+
+      {/* Brand — animate in on mount */}
+      <div
+        className="flex items-center gap-3 px-5 py-5 animate-sidebar-item"
+        style={{ animationDelay: '0ms' }}
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
+          <Activity className="h-4 w-4 text-white" />
         </div>
-        <div>
-          <p className="text-sm font-bold text-white leading-tight">NFC Healthcare</p>
-          <p className="text-xs text-[#94A3B8]">Clinical System</p>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white leading-tight tracking-tight">NFC Healthcare</p>
+          <p className="text-2xs text-sidebar-muted mt-0.5">Clinical System</p>
         </div>
       </div>
 
+      <div className="mx-4 h-px bg-sidebar-border" />
+
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <p className="px-3 mb-2 text-xs font-semibold text-[#475569] uppercase tracking-wider">
-          Navigation
-        </p>
-        {items.map(item => {
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        {items.map((item, i) => {
           const Icon = item.icon
-          const isHashLink = item.to.includes('#')
-          if (isHashLink) {
-            const isActive = currentPath === item.to
-            return (
-              <button
-                key={item.to}
-                onClick={() => {
-                  navigate(item.to)
-                  onClose?.()
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive
-                    ? 'bg-[#0055BB] text-white font-medium'
-                    : 'text-[#94A3B8] hover:bg-white/10 hover:text-white'
-                  }`}
-              >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                <span>{item.label}</span>
-              </button>
-            )
-          }
+          const isActive = item.to.includes('#')
+            ? currentPath === item.to
+            : location.pathname === item.to && !location.hash
+          const delay = `${(i + 1) * 55}ms`
+
           return (
-            <NavLink
+            <button
               key={item.to}
-              to={item.to}
               onClick={() => {
-                document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' })
+                navigate(item.to)
+                if (!item.to.includes('#')) {
+                  document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' })
+                }
                 onClose?.()
               }}
-              className={() => {
-                const isActive = location.pathname === item.to && !location.hash
-                return `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive
-                    ? 'bg-[#0055BB] text-white font-medium'
-                    : 'text-[#94A3B8] hover:bg-white/10 hover:text-white'
-                  }`
-              }}
+              style={{ animationDelay: delay }}
+              className={`${BASE_NAV} animate-sidebar-item overflow-hidden ${
+                isActive
+                  ? 'bg-sidebar-active text-white font-medium'
+                  : 'text-sidebar-muted hover:bg-sidebar-hover hover:text-white'
+              }`}
             >
+              {isActive && (
+                <span className="absolute left-0 inset-y-1.5 w-[3px] bg-white/80 rounded-r-full" />
+              )}
               <Icon className="h-4 w-4 flex-shrink-0" />
               <span>{item.label}</span>
-            </NavLink>
+            </button>
           )
         })}
       </nav>
 
       {/* User section */}
-      <div className="border-t border-white/10 p-4 space-y-3">
+      <div className="mx-4 h-px bg-sidebar-border" />
+      <div className="p-3 space-y-0.5">
         <button
           onClick={() => { navigate('/profile'); onClose?.() }}
-          className="w-full flex items-center gap-3 rounded-lg p-1 hover:bg-white/10 transition-colors text-left"
+          style={{ animationDelay: `${(items.length + 1) * 55}ms` }}
+          className={`${BASE_NAV} animate-sidebar-item text-left ${
+            location.pathname === '/profile' ? 'bg-sidebar-active text-white font-medium' : 'text-sidebar-muted hover:bg-sidebar-hover hover:text-white'
+          }`}
         >
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#0055BB] text-white text-sm font-bold">
-            {displayName.charAt(0).toUpperCase()}
+          {location.pathname === '/profile' && (
+            <span className="absolute left-0 inset-y-1.5 w-[3px] bg-white/80 rounded-r-full" />
+          )}
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-sidebar-subtle text-white text-xs font-bold">
+            {initial}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{displayName}</p>
-            <Badge variant="secondary" className="text-xs mt-0.5 bg-white/10 text-[#94A3B8] border-0">
-              {ROLE_LABELS[role]}
-            </Badge>
+            <p className="text-sm font-medium text-white truncate leading-tight">{displayName}</p>
+            <p className="text-2xs text-sidebar-muted mt-0.5">{ROLE_LABELS[role]}</p>
           </div>
         </button>
         <button
           onClick={logout}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#94A3B8] hover:bg-white/10 hover:text-white transition-colors"
+          style={{ animationDelay: `${(items.length + 2) * 55}ms` }}
+          className={`${BASE_NAV} animate-sidebar-item text-sidebar-muted hover:bg-sidebar-hover hover:text-white`}
         >
-          <LogOut className="h-4 w-4" />
-          <span>Sign Out</span>
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          <span>Sign out</span>
         </button>
       </div>
     </div>

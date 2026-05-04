@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { isValid } from "../../middleware/vaildation.js";
-import { assignPatientToDoctorSchema, getPatientsOfDoctorSchema } from "./receptionist.validation.js";
+import { assignPatientToDoctorSchema, reassignPatientSchema, getPatientsOfDoctorSchema } from "./receptionist.validation.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
-import { assignPatientToDoctor, getDoctorPatients, getMyPatients, dismissPatient, assignCardToPatient } from "./receptionist.controller.js";
+import { assignPatientToDoctor, reassignPatientToDoctor, getDoctorPatients, getMyPatients, dismissPatient, assignCardToPatient } from "./receptionist.controller.js";
 import { isAuthenticated } from "../../middleware/authentication.js";
 import { isAuthorized } from "../../middleware/autheraization.js";
 import { roles } from "../../utils/constant/enum.js";
@@ -16,6 +16,14 @@ receptionistRouter.post("/assign-patient",
     isAuthorized([ roles.RECEPTIONIST , roles.ADMIN_HOSPITAL ]),
     isValid(assignPatientToDoctorSchema),
     asyncHandler(assignPatientToDoctor)
+)
+
+// reassign patient from one doctor to another
+receptionistRouter.patch("/reassign-patient",
+    isAuthenticated(),
+    isAuthorized([ roles.RECEPTIONIST , roles.ADMIN_HOSPITAL ]),
+    isValid(reassignPatientSchema),
+    asyncHandler(reassignPatientToDoctor)
 )
 
 // get all patients of a doctor route (for receptionist/admin)

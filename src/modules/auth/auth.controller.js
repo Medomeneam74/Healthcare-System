@@ -210,7 +210,7 @@ export const signupDoctor = async (req, res, next) => {
   const {
     firstName,
     lastName,
-    specialization,
+    department,
     phoneNumber,
     email,
     password,
@@ -241,7 +241,7 @@ export const signupDoctor = async (req, res, next) => {
   const doctor = new Doctor({
     firstName,
     lastName,
-    specialization,
+    department,
     phoneNumber,
     email,
     password: hashedPassword,
@@ -615,7 +615,7 @@ export const updatePatientProfile = async (req, res, next) => {
 // Update Doctor Profile 
 export const updateDoctorProfile = async (req, res, next) => {
   const doctorId = req.authUser._id; // doctor from auth middleware
-  const { firstName, lastName, specialization, phoneNumber, hospitalId } = req.body;
+  const { firstName, lastName, department, phoneNumber, hospitalId } = req.body;
 
   // Find doctor
   const doctor = await Doctor.findById(doctorId);
@@ -626,7 +626,7 @@ export const updateDoctorProfile = async (req, res, next) => {
   // Update allowed fields
   if (firstName) doctor.firstName = firstName;
   if (lastName) doctor.lastName = lastName;
-  if (specialization) doctor.specialization = specialization;
+  if (department) doctor.department = department;
   if (phoneNumber) doctor.phoneNumber = phoneNumber;
   if (hospitalId) doctor.hospitalId = hospitalId;
 

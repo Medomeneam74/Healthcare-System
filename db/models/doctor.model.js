@@ -13,7 +13,7 @@ const doctorSchema = new Schema(
       trim: true,
       required: true,
     },
-    specialization: {
+    department: {
       type: String,
       trim: true,
       required: true,

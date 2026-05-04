@@ -9,7 +9,7 @@ export const generalFields = {
     password: joi.string().pattern(new RegExp(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/)).messages({
         'string.pattern.base': 'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character (#?!@$%^&*-)',
     }),
-    specialization: joi.string(),
+    department: joi.string(),
     phoneNumber: joi.string().pattern(new RegExp(/^01[0-2,5]{1}[0-9]{8}$/)),
     address: joi.string(),
     hotline: joi.string().pattern(/^\d{3,5}$/),
@@ -24,11 +24,11 @@ export const generalFields = {
     treatment: joi.string().trim(),
     medications: joi.array().items(
       joi.object({
-        name: joi.string().trim(),
-        dosage: joi.string().trim(),
-        frequency: joi.string().trim().allow(''),
-        duration: joi.string().trim().allow(''),
-      })),
+        name: joi.string().trim().allow('').optional(),
+        dosage: joi.string().trim().allow('').optional(),
+        frequency: joi.string().trim().allow('').optional(),
+        duration: joi.string().trim().allow('').optional(),
+      }).unknown(true)),
     visitDate: joi.date().default(Date.now),
     nationalId: joi.string().trim().min(1),   // Accept any non-empty string for national ID
     gender: joi.string().valid(...Object.values(genderTypes)),

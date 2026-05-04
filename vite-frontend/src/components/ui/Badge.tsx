@@ -3,15 +3,22 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { twMerge } from 'tailwind-merge'
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors',
+  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
   {
     variants: {
       variant: {
-        default: 'bg-[#0055BB] text-white',
-        secondary: 'bg-gray-100 text-gray-700',
-        destructive: 'bg-red-100 text-red-700',
-        outline: 'border border-gray-300 text-gray-700',
-        success: 'bg-green-100 text-green-700',
+        default:     'bg-accent text-accent-fg',
+        secondary:   'bg-canvas-subtle text-ink-secondary border border-line',
+        destructive: 'bg-danger-light text-danger',
+        outline:     'border border-line text-ink-secondary',
+        success:     'bg-sev-none-bg text-sev-none-fg border border-sev-none-line',
+        // Urgency-aligned severity variants — map directly to sev design tokens
+        critical:    'bg-sev-critical-bg text-sev-critical-fg border border-sev-critical-line font-semibold',
+        warning:     'bg-sev-high-bg text-sev-high-fg border border-sev-high-line',
+        safe:        'bg-sev-none-bg text-sev-none-fg border border-sev-none-line',
+        moderate:    'bg-sev-moderate-bg text-sev-moderate-fg border border-sev-moderate-line',
+        low:         'bg-sev-low-bg text-sev-low-fg border border-sev-low-line',
+        unknown:     'bg-sev-unknown-bg text-sev-unknown-fg border border-sev-unknown-line',
       },
     },
     defaultVariants: {
@@ -19,6 +26,8 @@ const badgeVariants = cva(
     },
   }
 )
+
+export type BadgeSeverity = 'critical' | 'warning' | 'safe' | 'moderate' | 'low' | 'unknown'
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,

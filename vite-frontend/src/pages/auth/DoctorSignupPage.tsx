@@ -12,14 +12,14 @@ interface FormData {
   email: string
   password: string
   confirmPassword: string
-  specialization: string
+  department: string
   phoneNumber: string
   hospitalId: string
 }
 
 const EMPTY: FormData = {
   firstName: '', lastName: '', email: '', password: '',
-  confirmPassword: '', specialization: '', phoneNumber: '', hospitalId: '',
+  confirmPassword: '', department: '', phoneNumber: '', hospitalId: '',
 }
 
 export default function DoctorSignupPage() {
@@ -45,7 +45,7 @@ export default function DoctorSignupPage() {
     if (!form.password)               e.password = 'Required'
     else if (form.password.length < 6) e.password = 'Minimum 6 characters'
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match'
-    if (!form.specialization.trim())  e.specialization = 'Required'
+    if (!form.department.trim())  e.department = 'Required'
     if (!form.phoneNumber.trim())     e.phoneNumber = 'Required'
     if (!form.hospitalId.trim())      e.hospitalId = 'Hospital ID is required'
     else if (!/^[a-fA-F0-9]{24}$/.test(form.hospitalId.trim())) e.hospitalId = 'Invalid hospitalId'
@@ -64,7 +64,7 @@ export default function DoctorSignupPage() {
         lastName:       form.lastName,
         email:          form.email,
         password:       form.password,
-        specialization: form.specialization,
+        department: form.department,
         phoneNumber:    form.phoneNumber,
         hospitalId:     form.hospitalId.trim(),
       })
@@ -79,7 +79,7 @@ export default function DoctorSignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-6">
+      <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50 mx-auto mb-4">
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -91,7 +91,7 @@ export default function DoctorSignupPage() {
           </p>
           <Link
             to="/login"
-            className="inline-flex items-center justify-center w-full h-10 rounded-lg text-sm font-medium text-white bg-[#0055BB] hover:bg-[#0044a0] transition-colors"
+            className="inline-flex items-center justify-center w-full h-10 rounded-lg text-sm font-medium text-white bg-accent hover:bg-accent-hover transition-colors"
           >
             Back to Login
           </Link>
@@ -103,7 +103,7 @@ export default function DoctorSignupPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center bg-gradient-to-br from-[#0055BB] to-[#003380] px-12 text-white relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center bg-gradient-to-br from-accent to-accent-active px-12 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/5 -translate-y-16 translate-x-16" />
         <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-white/5 translate-y-12 -translate-x-12" />
         <div className="relative z-10 text-center max-w-md">
@@ -131,10 +131,10 @@ export default function DoctorSignupPage() {
       </div>
 
       {/* Form panel */}
-      <div className="flex flex-1 items-center justify-center bg-[#F8FAFC] px-6 py-12">
+      <div className="flex flex-1 items-center justify-center bg-canvas px-6 py-12">
         <div className="w-full max-w-md">
           <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0055BB]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
               <Activity className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">NFC Healthcare</span>
@@ -185,8 +185,8 @@ export default function DoctorSignupPage() {
                 <Input type="password" placeholder="Re-enter your password" value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} autoComplete="new-password" />
               </Field>
 
-              <Field label="Specialization *" error={errors.specialization}>
-                <Input placeholder="e.g. Cardiology, Neurology" value={form.specialization} onChange={e => set('specialization', e.target.value)} />
+              <Field label="Department *" error={errors.department}>
+                <Input placeholder="e.g. Cardiology, Neurology" value={form.department} onChange={e => set('department', e.target.value)} />
               </Field>
 
               <Field label="Phone Number *" error={errors.phoneNumber}>
@@ -226,7 +226,7 @@ export default function DoctorSignupPage() {
 
             <p className="mt-6 text-center text-sm text-gray-500">
               Already have an account?{' '}
-              <Link to="/login" className="text-[#0055BB] font-medium hover:underline">
+              <Link to="/login" className="text-accent font-medium hover:underline">
                 Sign in
               </Link>
             </p>

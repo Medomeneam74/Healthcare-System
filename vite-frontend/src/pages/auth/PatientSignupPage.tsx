@@ -204,10 +204,10 @@ function OtpScreen({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-6">
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 mx-auto mb-4">
-          <Activity className="h-8 w-8 text-[#0055BB]" />
+          <Activity className="h-8 w-8 text-accent" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-1 text-center">Verify your email</h2>
         <p className="text-gray-500 text-sm mb-6 text-center">
@@ -255,7 +255,7 @@ function OtpScreen({
             type="button"
             onClick={handleResend}
             disabled={resending}
-            className="text-[#0055BB] font-medium hover:underline disabled:opacity-50"
+            className="text-accent font-medium hover:underline disabled:opacity-50"
           >
             {resending ? 'Sending...' : 'Resend'}
           </button>
@@ -442,7 +442,7 @@ export default function PatientSignupPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-5/12 flex-col items-center justify-center bg-gradient-to-br from-[#0055BB] to-[#003380] px-12 text-white relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-5/12 flex-col items-center justify-center bg-gradient-to-br from-accent to-accent-active px-12 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/5 -translate-y-16 translate-x-16" />
         <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-white/5 translate-y-12 -translate-x-12" />
         <div className="relative z-10 text-center max-w-sm">
@@ -470,11 +470,11 @@ export default function PatientSignupPage() {
       </div>
 
       {/* Form panel */}
-      <div className="flex flex-1 items-start justify-center bg-[#F8FAFC] px-6 py-10 overflow-y-auto">
+      <div className="flex flex-1 items-start justify-center bg-canvas px-6 py-10 overflow-y-auto">
         <div className="w-full max-w-lg">
           {/* Mobile brand */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0055BB]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
               <Activity className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">NFC Healthcare</span>
@@ -541,7 +541,7 @@ export default function PatientSignupPage() {
                       title="Tap NFC card to read card number"
                     >
                       {nfcScanning
-                        ? <div className="h-4 w-4 rounded-full border-2 border-gray-300 border-t-[#0055BB] animate-spin" />
+                        ? <div className="h-4 w-4 rounded-full border-2 border-gray-300 border-t-accent animate-spin" />
                         : <Wifi className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -731,7 +731,7 @@ export default function PatientSignupPage() {
 
             <p className="mt-6 text-center text-sm text-gray-500">
               Already have an account?{' '}
-              <Link to="/login" className="text-[#0055BB] font-medium hover:underline">
+              <Link to="/login" className="text-accent font-medium hover:underline">
                 Sign in
               </Link>
             </p>

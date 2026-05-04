@@ -27,7 +27,7 @@ const userSchema = new Schema(
       required: true,
     },
     // if doctor
-    specialization: {
+    department: {
       type: String,
       trim: true,
     },

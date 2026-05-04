@@ -200,7 +200,7 @@ export const getAllMedicalRecords = async (req, res, next) => {
 
   const records = await MedicalRecord.find(query)
     .populate("patientId", "firstName lastName")
-    .populate("doctorId", "firstName lastName specialization")
+    .populate("doctorId", "firstName lastName department")
     .populate("hospitalId", "name address")
     .sort({ createdAt: -1 });
 
@@ -233,7 +233,7 @@ export const getMedicalRecordById = async (req, res, next) => {
   // Find record by ID
   const record = await MedicalRecord.findById(recordId)
     .populate("patientId", "firstName lastName nationalId dateOfBirth bloodType phoneNumber") // only selected patient fields
-    .populate("doctorId", "firstName lastName specialization email phoneNumber") // only selected doctor fields
+    .populate("doctorId", "firstName lastName department email phoneNumber") // only selected doctor fields
     .populate("hospitalId", "name address phoneNumber email"); // only selected hospital fields
 
   // Check if record exists
@@ -261,7 +261,7 @@ export const getMedicalRecordByPatient = async (req, res, next) => {
     ]
   })
     .populate("patientId", "firstName lastName")
-    .populate("doctorId", "firstName lastName specialization")
+    .populate("doctorId", "firstName lastName department")
     .populate("hospitalId", "name address")
     .sort({ createdAt: -1 });
 

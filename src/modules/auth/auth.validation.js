@@ -65,7 +65,7 @@ export const loginPatientSchema = joi.object({
 export const signupDoctorSchema = joi.object({
     firstName : generalFields.name.required(),
     lastName : generalFields.name.required(),
-    specialization : generalFields.specialization.required(),
+    department : generalFields.department.required(),
     email : generalFields.email.required(),
     phoneNumber : generalFields.phoneNumber.required(),
     password : generalFields.password.required(),
@@ -112,7 +112,7 @@ export const updatePatientProfileSchema = joi.object({
 export const updateDoctorProfileSchema = joi.object({
     firstName : generalFields.name.optional(),
     lastName : generalFields.name.optional(),
-    specialization : generalFields.specialization.optional(),
+    department : generalFields.department.optional(),
     phoneNumber : generalFields.phoneNumber.optional(),
     hospitalId : generalFields.objectId.optional(),
 })

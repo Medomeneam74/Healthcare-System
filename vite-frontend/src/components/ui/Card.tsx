@@ -1,10 +1,24 @@
 import React from 'react'
 import { twMerge } from 'tailwind-merge'
 
-export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+const urgencyStyles = {
+  critical: 'border-l-[3px] border-l-sev-critical-fg',
+  warning:  'border-l-[3px] border-l-sev-high-fg',
+  safe:     'border-l-[3px] border-l-sev-none-fg',
+} as const
+
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  urgency?: keyof typeof urgencyStyles
+}
+
+export function Card({ className, urgency, ...props }: CardProps) {
   return (
     <div
-      className={twMerge('rounded-lg border border-gray-200 bg-white shadow-sm', className)}
+      className={twMerge(
+        'rounded-lg border border-line bg-canvas-raised shadow-card',
+        urgency && urgencyStyles[urgency],
+        className
+      )}
       {...props}
     />
   )
@@ -17,14 +31,14 @@ export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDiv
 export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={twMerge('text-base font-semibold leading-none tracking-tight text-gray-900', className)}
+      className={twMerge('text-base font-semibold leading-none tracking-tight text-ink', className)}
       {...props}
     />
   )
 }
 
 export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={twMerge('text-sm text-gray-500 mt-1', className)} {...props} />
+  return <p className={twMerge('text-sm text-ink-secondary mt-1', className)} {...props} />
 }
 
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

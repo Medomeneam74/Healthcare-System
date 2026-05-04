@@ -51,7 +51,7 @@ export default function FacilityManagement() {
   const navigate = useNavigate()
   const VALID_TABS = ['overview', 'hospitals', 'admins', 'cards']
   const hashTab = location.hash.replace('#', '')
-  const activeTab = VALID_TABS.includes(hashTab) ? hashTab : 'hospitals'
+  const activeTab = VALID_TABS.includes(hashTab) ? hashTab : 'overview'
   const { toast } = useToast()
   const [hospitals, setHospitals] = useState<Hospital[]>([])
   const [hospitalAdmins, setHospitalAdmins] = useState<{ _id: string; fullName: string; email: string; phoneNumber?: string; hospitalId?: { _id: string; name: string } }[]>([])
@@ -371,7 +371,7 @@ export default function FacilityManagement() {
         <TabsContent value="overview">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Hospitals', value: hospitals.length, icon: Building2, color: 'bg-blue-50 text-[#0055BB]' },
+              { label: 'Hospitals', value: hospitals.length, icon: Building2, color: 'bg-blue-50 text-accent' },
               { label: 'Total Patients', value: patients.length, icon: Users, color: 'bg-indigo-50 text-indigo-600' },
               { label: 'Total Doctors', value: doctors.length, icon: Stethoscope, color: 'bg-green-50 text-green-600' },
               { label: 'Receptionists', value: receptionists.length, icon: UserCog, color: 'bg-purple-50 text-purple-600' },
@@ -423,11 +423,11 @@ export default function FacilityManagement() {
               ) : (
                 <div className="grid sm:grid-cols-2 gap-4">
                   {hospitals.map(h => (
-                    <div key={h._id} className="rounded-xl border border-gray-200 p-4 hover:border-[#0055BB]/40 transition-colors">
+                    <div key={h._id} className="rounded-xl border border-gray-200 p-4 hover:border-accent/40 transition-colors">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50">
-                            <Building2 className="h-5 w-5 text-[#0055BB]" />
+                            <Building2 className="h-5 w-5 text-accent" />
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-gray-900 truncate">{h.name}</p>
@@ -833,7 +833,7 @@ export default function FacilityManagement() {
                       <span className="absolute inline-flex h-14 w-14 rounded-full bg-blue-200 opacity-60 animate-ping [animation-delay:0.3s]" />
                     </>
                   )}
-                  <div className={`relative flex h-10 w-10 items-center justify-center rounded-full ${bridgeStatus === 'unavailable' ? 'bg-gray-300' : 'bg-[#0055BB]'}`}>
+                  <div className={`relative flex h-10 w-10 items-center justify-center rounded-full ${bridgeStatus === 'unavailable' ? 'bg-gray-300' : 'bg-accent'}`}>
                     <Wifi className="h-5 w-5 text-white rotate-90" />
                   </div>
                 </div>
