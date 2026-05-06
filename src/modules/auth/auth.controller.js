@@ -249,70 +249,63 @@ export const signupDoctor = async (req, res, next) => {
     hospitalId
   });
 
-  // Save to database
-  const createdDoctor = await doctor.save();
+  // Generate OTP and set expiry
+  const otp = generateOTP();
+  const otpExpires = Date.now() + 10 * 60 * 1000;
+
+  // Save doctor with OTP
+  const createdDoctor = await new Doctor({
+    firstName,
+    lastName,
+    department,
+    phoneNumber,
+    email,
+    password: hashedPassword,
+    role: roles.DOCTOR,
+    hospitalId,
+    otp,
+    otpExpires: String(otpExpires),
+  }).save();
   if (!createdDoctor) {
     return next(new AppError(messages.doctor.failToCreate, 500));
   }
 
-  // Generate verification token
-  const token = generateToken({
-    payload: { email: createdDoctor.email, _id: createdDoctor._id }
-  });
+  await sendOTP(email, otp);
 
-  // Send verification email
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  await sendEmail({
-    to: email,
-    subject: "Verify your Doctor Account",
-    html: `<p>Click the link to verify your account: <a href="${frontendUrl}/verify-account?token=${token}">Verify Account</a></p>`
-  });
-
-  // Send response
   return res.status(201).json({
     message: messages.doctor.accountCreated,
     success: true,
-    data: createdDoctor
   });
 };
 
-// verify doctor account
-export const verifyDoctorAccount = async (req, res, next) => {
-  const { token } = req.params;
+// verify doctor account via OTP
+export const verifyDoctorOtp = async (req, res, next) => {
+  const { email, otp } = req.body;
 
-  // Verify token
-  const payload = verifyToken(token);
-
-  if (!payload || !payload.email) {
-    return next(new AppError(messages.user.invalidToken, 400));
-  }
-
-  // Find doctor by email (normalize email to lowercase)
-  const updatedDoctor = await Doctor.findOneAndUpdate(
-    { email: payload.email.toLowerCase() },
-    { isVerified: true },
-    { new: true }
-  );
-
-  if (!updatedDoctor) {
+  const doctor = await Doctor.findOne({ email: email.toLowerCase() });
+  if (!doctor) {
     return next(new AppError(messages.user.notExist, 404));
   }
 
-  return res.status(200).send(`
-    <html>
-      <head>
-        <style>
-          body { font-family: Arial; background-color: #f5f5f5; text-align: center; padding: 60px; color: #333; }
-          h1 { color: #2e7d32; }
-          p { font-size: 18px; }
-        </style>
-      </head>
-      <body>
-        <h1>✅ Doctor Account Verified Successfully</h1>
-        <p>Your account is now active. You can log in anytime.</p>
-      </body>
-    </html>
-  `);
+  if (doctor.isVerified) {
+    return res.status(200).json({ message: 'Account already verified.', success: true });
+  }
+
+  if (!doctor.otp || doctor.otp !== otp) {
+    return next(new AppError('Invalid OTP.', 400));
+  }
+
+  if (Date.now() > Number(doctor.otpExpires)) {
+    return next(new AppError('OTP has expired. Please register again.', 400));
+  }
+
+  await Doctor.findByIdAndUpdate(doctor._id, {
+    isVerified: true,
+    otp: null,
+    otpExpires: null,
+  });
+
+  return res.status(200).json({ message: 'Account verified successfully.', success: true });
 };
 
 // LOGIN 

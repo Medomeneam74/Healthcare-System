@@ -29,6 +29,10 @@ export default function DoctorSignupPage() {
   const [apiError, setApiError] = useState('')
   const [success, setSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [verifying, setVerifying] = useState(false)
 
   const set = (field: keyof FormData, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -68,12 +72,30 @@ export default function DoctorSignupPage() {
         phoneNumber:    form.phoneNumber,
         hospitalId:     form.hospitalId.trim(),
       })
-      setSuccess(true)
+      setOtpSent(true)
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } }
       setApiError(e?.response?.data?.message ?? 'Registration failed. Please try again.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleVerifyOtp = async (ev: React.FormEvent) => {
+    ev.preventDefault()
+    if (!otp.trim()) { setOtpError('Please enter the OTP'); return }
+    if (!/^\d{6}$/.test(otp.trim())) { setOtpError('OTP must be 6 digits'); return }
+    setVerifying(true)
+    setOtpError('')
+    setApiError('')
+    try {
+      await client.post('/auth/verify-doctor-otp', { email: form.email, otp: otp.trim() })
+      setSuccess(true)
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      setOtpError(e?.response?.data?.message ?? 'Invalid or expired OTP.')
+    } finally {
+      setVerifying(false)
     }
   }
 
@@ -84,17 +106,69 @@ export default function DoctorSignupPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50 mx-auto mb-4">
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Account Verified!</h2>
           <p className="text-gray-500 text-sm mb-6">
-            Your account has been created. Please check your email inbox and click the
-            verification link to activate your account before logging in.
+            Your account has been verified successfully. You can now log in.
           </p>
           <Link
             to="/login"
             className="inline-flex items-center justify-center w-full h-10 rounded-lg text-sm font-medium text-white bg-accent hover:bg-accent-hover transition-colors"
           >
-            Back to Login
+            Go to Login
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (otpSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 mx-auto mb-4">
+            <Activity className="h-8 w-8 text-accent" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+          <p className="text-gray-500 text-sm mb-6">
+            We sent a 6-digit OTP to <span className="font-medium text-gray-700">{form.email}</span>.
+            Enter it below to verify your account.
+          </p>
+          <form onSubmit={handleVerifyOtp} className="space-y-4 text-left">
+            <Field label="One-Time Password (OTP)" error={otpError}>
+              <Input
+                placeholder="Enter 6-digit OTP"
+                value={otp}
+                onChange={e => { setOtp(e.target.value); setOtpError('') }}
+                maxLength={6}
+                autoComplete="one-time-code"
+                className="text-center tracking-widest text-lg"
+              />
+            </Field>
+            {apiError && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {apiError}
+              </div>
+            )}
+            <Button type="submit" className="w-full h-10" disabled={verifying}>
+              {verifying ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Verifying...
+                </span>
+              ) : 'Verify Account'}
+            </Button>
+          </form>
+          <p className="mt-4 text-center text-sm text-gray-500">
+            Didn't receive it? Check your spam folder or{' '}
+            <button
+              type="button"
+              onClick={() => { setOtpSent(false); setForm(EMPTY); setOtp('') }}
+              className="text-accent font-medium hover:underline"
+            >
+              register again
+            </button>.
+          </p>
         </div>
       </div>
     )
