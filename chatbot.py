@@ -22,6 +22,7 @@ import tempfile
 import subprocess
 import requests as _req
 from datetime import datetime, date, timezone
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -285,7 +286,7 @@ async def _simplify_ddi(ddi: dict, patient_data: dict, new_drug: str, user_messa
                     {"role": "user", "content": f"رسالة المريض: {user_message}\n\nاشرح النتيجة دي للمريض بلغة بسيطة:\n\n{tech_summary}"},
                 ],
                 temperature=0.5,
-                max_tokens=1024,
+                max_tokens=4096,
             ),
         )
         reply = resp.choices[0].message.content
@@ -649,7 +650,7 @@ async def chat(request: ChatRequest):
                 model=CHATBOT_GROQ_MODEL,
                 messages=messages,
                 temperature=0.5,
-                max_tokens=1024,
+                max_tokens=4096,
             ),
         )
         reply = completion.choices[0].message.content

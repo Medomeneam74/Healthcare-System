@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import mongoose from 'mongoose';
 import multer from 'multer';
 import axios from 'axios';
 import { isAuthenticated } from '../../middleware/authentication.js';
@@ -8,7 +7,7 @@ import { asyncHandler } from '../../middleware/asyncHandler.js';
 import { roles } from '../../utils/constant/enum.js';
 import { AppError } from '../../utils/appError.js';
 import { callChatbotService, checkChatbotHealth } from '../../utils/chatbot-service-config.js';
-import { Patient, MedicalRecord, PatientChatLog } from '../../../db/index.js';
+import { PatientChatLog } from '../../../db/index.js';
 
 // ─── Voice upload middleware ───────────────────────────────────────────────────
 // Stores the audio in memory (buffer) — no disk I/O needed for small recordings.
@@ -22,82 +21,6 @@ const uploadAudio = (req, res) =>
     new Promise((resolve, reject) => _multerAudio(req, res, err => (err ? reject(err) : resolve())));
 
 const chatbotRouter = Router();
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const calcAge = (dob) => {
-    if (!dob) return null;
-    return Math.floor(
-        (Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-    );
-};
-
-/** MedicalRecord.patientId is Mixed — query both string and ObjectId forms. */
-const medRecordFilter = (pid) => {
-    if (!mongoose.Types.ObjectId.isValid(pid)) return { patientId: pid };
-    return { $or: [{ patientId: pid }, { patientId: new mongoose.Types.ObjectId(pid) }] };
-};
-
-/**
- * Builds a plain-text system prompt injected as the FIRST message in
- * conversation_history.  The LLM sees it on every request — it never has
- * to look up the patient itself.
- */
-const buildSystemContext = (ctx, records) => {
-    const lines = [
-        '=== PATIENT MEDICAL CONTEXT (provided by the healthcare system) ===',
-        `Name          : ${ctx.name}`,
-        `Age           : ${ctx.age ?? 'Unknown'}`,
-        `Date of Birth : ${ctx.dateOfBirth ?? 'Unknown'}`,
-        `Gender        : ${ctx.gender ?? 'Unknown'}`,
-        `Blood Type    : ${ctx.bloodType ?? 'Unknown'}`,
-        `Phone         : ${ctx.phoneNumber ?? 'Not provided'}`,
-        `Address       : ${ctx.address ?? 'Not provided'}`,
-        `Chronic Diseases : ${ctx.chronicDiseases.length ? ctx.chronicDiseases.join(', ') : 'None'}`,
-        `Surgeries        : ${ctx.surgeries.length ? ctx.surgeries.join(', ') : 'None'}`,
-    ];
-
-    if (ctx.emergencyContact) {
-        const { name, relation, phone } = ctx.emergencyContact;
-        lines.push(`Emergency Contact: ${name} (${relation ?? 'N/A'}) — ${phone ?? 'N/A'}`);
-    }
-
-    if (records.length > 0) {
-        lines.push('', '--- MEDICAL RECORDS (newest first) ---');
-        records.forEach((r, i) => {
-            lines.push(`\n[${i + 1}] Date: ${r.date} | Diagnosis: ${r.diagnosis}`);
-            if (r.treatment) lines.push(`    Treatment : ${r.treatment}`);
-            if (r.doctor)    lines.push(`    Doctor    : ${r.doctor}`);
-            if (r.hospital)  lines.push(`    Hospital  : ${r.hospital}`);
-            if (r.medications.length) {
-                const meds = r.medications
-                    .map(m => `${m.name}${m.dosage ? ` ${m.dosage}` : ''}${m.duration ? ` for ${m.duration}` : ''}`)
-                    .join('; ');
-                lines.push(`    Medications: ${meds}`);
-            }
-            if (r.drugInteractionAlert) {
-                lines.push(
-                    `    ⚠ Drug Interaction [${r.drugInteractionAlert.severity.toUpperCase()}]: ` +
-                    r.drugInteractionAlert.summary
-                );
-                if (r.drugInteractionAlert.recommendations.length) {
-                    lines.push(`       → ${r.drugInteractionAlert.recommendations.join('; ')}`);
-                }
-            }
-        });
-    } else {
-        lines.push('', '--- MEDICAL RECORDS ---', 'No medical records on file.');
-    }
-
-    lines.push('', '=== END OF PATIENT CONTEXT ===');
-    lines.push(
-        'You are a helpful medical assistant. Use the patient context above to answer ' +
-        "questions about this patient's health, medications, and medical history. " +
-        'If asked "what do you know about me" or similar, summarise the context above clearly.'
-    );
-
-    return lines.join('\n');
-};
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
@@ -121,7 +44,6 @@ chatbotRouter.post(
             return next(new AppError('message is required', 400));
         }
 
-        // Resolve patient ID
         let resolvedPatientId;
         if (authUser.role === roles.PATIENT) {
             resolvedPatientId = authUser._id.toString();
@@ -132,103 +54,12 @@ chatbotRouter.post(
             resolvedPatientId = patientId;
         }
 
-        // Fetch patient profile + recent medical records in parallel
-        const [patient, recentRecords] = await Promise.all([
-            Patient.findById(resolvedPatientId).lean(),
-            MedicalRecord.find(medRecordFilter(resolvedPatientId))
-                .sort({ createdAt: -1 })
-                .limit(20)
-                .populate('doctorId', 'firstName lastName department')
-                .populate('hospitalId', 'name')
-                .lean(),
-        ]);
-
-        if (!patient) {
-            return next(new AppError('Patient not found', 404));
-        }
-
-        // Build structured patient context
-        const patientContext = {
-            name: `${patient.firstName} ${patient.lastName}`,
-            age: calcAge(patient.dateOfBirth),
-            dateOfBirth: patient.dateOfBirth
-                ? new Date(patient.dateOfBirth).toLocaleDateString('en-GB')
-                : null,
-            gender: patient.gender || null,
-            bloodType: patient.bloodType || null,
-            phoneNumber: patient.phoneNumber || null,
-            address: patient.address || null,
-            chronicDiseases: patient.ChronicDiseases?.length ? patient.ChronicDiseases : [],
-            surgeries: patient.surgerys?.length ? patient.surgerys : [],
-            emergencyContact: patient.emergencyContact?.name ? patient.emergencyContact : null,
-        };
-
-        // Format medical records
-        const medicalRecords = recentRecords.map(r => ({
-            date: r.visitDate
-                ? new Date(r.visitDate).toLocaleDateString('en-GB')
-                : new Date(r.createdAt).toLocaleDateString('en-GB'),
-            diagnosis: r.diagnosis,
-            treatment: r.treatment || null,
-            medications: (r.medications || []).map(m => ({
-                name: m.name,
-                dosage: m.dosage || m.dose || '',
-                duration: m.duration || '',
-                notes: m.notes || '',
-            })),
-            doctor: r.doctorId
-                ? `Dr. ${r.doctorId.firstName} ${r.doctorId.lastName}` +
-                  (r.doctorId.department ? ` (${r.doctorId.department})` : '')
-                : null,
-            hospital: r.hospitalId?.name || null,
-            drugInteractionAlert: r.aiAnalysis?.hasConflict
-                ? {
-                    severity: r.aiAnalysis.severity,
-                    summary: r.aiAnalysis.analysis,
-                    recommendations: r.aiAnalysis.recommendations || [],
-                  }
-                : null,
-        }));
-
-        // Resolve conversation history for the current session.
-        // If the frontend sends none (new session / page refresh), restore from DB.
-        let history = conversation_history;
-        if (!history || history.length === 0) {
-            const pastLogs = await PatientChatLog.find({ patientId: resolvedPatientId })
-                .sort({ createdAt: -1 })
-                .limit(10)
-                .select('message response')
-                .lean();
-
-            history = pastLogs.reverse().flatMap(log => [
-                { role: 'user',      content: log.message },
-                ...(log.response ? [{ role: 'assistant', content: log.response }] : []),
-            ]);
-        }
-
-        // Build context string from patient data fetched directly from MongoDB.
-        const systemContextContent = buildSystemContext(patientContext, medicalRecords);
-
-        // Inject context as a user/assistant exchange at the START of history.
-        // Using role:'system' is unreliable — many Python FastAPI services define
-        // conversation_history as List[{"role": "user"|"assistant", ...}] and will
-        // silently drop or reject a system-role entry.  A synthetic user/assistant
-        // pair is accepted by every LLM API and guaranteed to reach the model.
-        const historyWithContext = [
-            { role: 'user',      content: systemContextContent },
-            { role: 'assistant', content: `Understood. I have the full medical context for ${patientContext.name} and will use it throughout our conversation.` },
-            ...history,
-        ];
-
+        // Python chatbot fetches patient data + history directly from MongoDB —
+        // no need to duplicate those queries here.
         const payload = {
             patient_id: resolvedPatientId,
-            // Top-level fields — for Python services that have a system_prompt slot
-            system_prompt: systemContextContent,
-            patient_context: patientContext,
-            medical_records: medicalRecords,
             message: message.trim(),
-            // conversation_history always starts with the patient context exchange
-            conversation_history: historyWithContext,
+            conversation_history: conversation_history || [],
         };
 
         const result = await callChatbotService('/chat', 'POST', payload);
@@ -239,7 +70,7 @@ chatbotRouter.post(
                 sessionId: session_id || null,
                 message: message.trim(),
                 response: null,
-                conversation_history: history,
+                conversation_history: conversation_history || [],
                 serviceAvailable: false,
             }).catch(err => console.error('[Chatbot] log save error:', err.message));
 
@@ -249,7 +80,6 @@ chatbotRouter.post(
             ));
         }
 
-        // Extract the assistant reply text (handle different Python service response shapes)
         const assistantResponse =
             result.data?.response
             ?? result.data?.message
@@ -257,18 +87,11 @@ chatbotRouter.post(
             ?? result.data?.reply
             ?? (typeof result.data === 'string' ? result.data : null);
 
-        // Persist to patient_chat_logs — store only real turns, not the injected
-        // context exchange (fire-and-forget, never blocks the response)
         PatientChatLog.create({
             patientId: resolvedPatientId,
             sessionId: session_id || null,
             message: message.trim(),
             response: assistantResponse,
-            conversation_history: [
-                ...history,   // previous real turns (no context injection)
-                { role: 'user', content: message.trim() },
-                ...(assistantResponse ? [{ role: 'assistant', content: assistantResponse }] : []),
-            ],
             serviceAvailable: true,
         }).catch(err => console.error('[Chatbot] log save error:', err.message));
 

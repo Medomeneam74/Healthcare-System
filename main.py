@@ -9,6 +9,7 @@ import json
 import re
 import os
 import asyncio
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from datetime import datetime
@@ -97,18 +98,32 @@ client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 # ==================== DRUG INFORMATION SERVICE ====================
 
+# In-memory drug info cache — keyed by lowercase drug name, 24h TTL
+_drug_cache: Dict[str, dict] = {}
+_DRUG_CACHE_TTL = 86400  # 24 hours
+
+def _get_cached(drug_name: str) -> Optional[dict]:
+    entry = _drug_cache.get(drug_name.lower())
+    if entry and (time.time() - entry["ts"]) < _DRUG_CACHE_TTL:
+        return entry["data"]
+    return None
+
+def _set_cached(drug_name: str, data: dict) -> None:
+    _drug_cache[drug_name.lower()] = {"data": data, "ts": time.time()}
+
+
 class DrugInfoService:
     """Service to fetch drug information from free government APIs"""
-    
+
     FDA_BASE_URL = "https://api.fda.gov/drug/label.json"
     RXNORM_BASE_URL = "https://rxnav.nlm.nih.gov/REST"
-    
+
     @classmethod
     def get_rxcui(cls, drug_name: str) -> Optional[str]:
         """Get RxCUI (unique identifier) for a drug from RxNorm"""
         try:
             url = f"{cls.RXNORM_BASE_URL}/rxcui.json?name={drug_name}"
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, timeout=3)
             data = response.json()
             
             if 'idGroup' in data and 'rxnormId' in data['idGroup']:
@@ -123,7 +138,7 @@ class DrugInfoService:
         try:
             clean_name = drug_name.strip().lower()
             url = f"{cls.FDA_BASE_URL}?search=openfda.brand_name:\"{clean_name}\"+openfda.generic_name:\"{clean_name}\"&limit=1"
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, timeout=3)
             
             if response.status_code == 200:
                 data = response.json()
@@ -160,7 +175,7 @@ class DrugInfoService:
         """Get known drug interactions for a rxcui from RxNorm"""
         try:
             url = f"{cls.RXNORM_BASE_URL}/interaction/interaction.json?rxcui={rxcui}"
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, timeout=3)
             if response.status_code != 200:
                 return None
             data = response.json()
@@ -185,16 +200,22 @@ class DrugInfoService:
     @classmethod
     def get_complete_drug_info(cls, drug_name: str) -> Dict:
         """Get comprehensive drug information from all sources"""
+        cached = _get_cached(drug_name)
+        if cached:
+            return cached
+
         fda_info = cls.get_fda_drug_info(drug_name)
         rxnorm_info = cls.get_rxcui(drug_name)
         rxnorm_interactions = cls.get_rxnorm_interactions(rxnorm_info) if rxnorm_info else None
 
-        return {
+        result = {
             "drug_name": drug_name,
             "fda_information": fda_info,
             "rxnorm_information": {"rxcui": rxnorm_info, "interactions": rxnorm_interactions} if rxnorm_info else None,
             "has_data": bool(fda_info or rxnorm_info)
         }
+        _set_cached(drug_name, result)
+        return result
 
 # ==================== DATA MODELS ====================
 
