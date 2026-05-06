@@ -61,6 +61,12 @@ export const loginPatientSchema = joi.object({
     password : joi.string().required(),
 })
 
+// doctor OTP verification
+export const verifyDoctorOtpSchema = joi.object({
+    email : generalFields.email.required(),
+    otp : generalFields.otp.required(),
+})
+
 // doctor signup validation
 export const signupDoctorSchema = joi.object({
     firstName : generalFields.name.required(),

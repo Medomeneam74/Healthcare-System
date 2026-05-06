@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { isValid } from "../../middleware/vaildation.js";
-import { forgetDoctorPasswordSchema, loginPatientSchema, loginSchema, resetDoctorPasswordSchema, resendPatientOtpSchema, selfSignupPatientSchema, signupDoctorSchema, signupPatientSchema, updateDoctorProfileSchema, updatePatientProfileSchema, verifyPatientOtpSchema } from "./auth.validation.js";
+import { forgetDoctorPasswordSchema, loginPatientSchema, loginSchema, resetDoctorPasswordSchema, resendPatientOtpSchema, selfSignupPatientSchema, signupDoctorSchema, signupPatientSchema, updateDoctorProfileSchema, updatePatientProfileSchema, verifyDoctorOtpSchema, verifyPatientOtpSchema } from "./auth.validation.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
-import { forgetPasswordDoctor, forgetPasswordStaff, resetPasswordStaff, getPatientProfile, getProfileDoctor, login, loginPatient, selfSignupPatient, verifyPatientOtp, resendPatientOtp, signupDoctor, signupPatient, updateDoctorProfile, updatePatientProfile, verifyDoctorAccount, verifyOtpAndResetPasswordDoctor, getAllPatients, getAllDoctors, getAllReceptionists, getMyProfile, getPatientByNationalId, getPatientByCardId, getPatientByNfcUid } from "./auth.controller.js";
+import { forgetPasswordDoctor, forgetPasswordStaff, resetPasswordStaff, getPatientProfile, getProfileDoctor, login, loginPatient, selfSignupPatient, verifyPatientOtp, resendPatientOtp, signupDoctor, signupPatient, updateDoctorProfile, updatePatientProfile, verifyDoctorOtp, verifyOtpAndResetPasswordDoctor, getAllPatients, getAllDoctors, getAllReceptionists, getMyProfile, getPatientByNationalId, getPatientByCardId, getPatientByNfcUid } from "./auth.controller.js";
 import { isAuthenticated } from "../../middleware/authentication.js";
 import { isAuthorized } from "../../middleware/autheraization.js";
 import { roles } from "../../utils/constant/enum.js";
@@ -44,8 +44,8 @@ authRouter.post('/login/patient', isValid(loginPatientSchema), asyncHandler(logi
 // doctor signup route
 authRouter.post('/signup/doctor', isValid(signupDoctorSchema), asyncHandler(signupDoctor))
 
-// verify doctor route
-authRouter.get('/verify/:token', asyncHandler(verifyDoctorAccount))
+// verify doctor OTP route
+authRouter.post('/verify-doctor-otp', isValid(verifyDoctorOtpSchema), asyncHandler(verifyDoctorOtp))
 
 // doctor login route
 authRouter.post('/login', isValid(loginSchema), asyncHandler(login));

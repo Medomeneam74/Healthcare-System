@@ -88,7 +88,7 @@ app = FastAPI(title="NFC Healthcare — Patient Chatbot", version="2.0.0", lifes
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
 )
