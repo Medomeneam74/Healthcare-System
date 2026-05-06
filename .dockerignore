@@ -1,0 +1,9 @@
+node_modules
+venv
+.env
+.env.local
+.git
+vite-frontend/node_modules
+vite-frontend/dist
+*.txt
+*.log

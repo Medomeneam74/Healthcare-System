@@ -1,14 +1,21 @@
-version: '3.8'
-
 services:
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
     environment:
-      - DB_URL=mongodb+srv://bodytarek2003_db_user:bPzJxGCug6LhNKxl@cluster0.qkbfket.mongodb.net/nfc-healthcare?appName=Cluster0
-    deploy:
-      replicas: 2
+      - DB_URL=${DB_URL}
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - SECRET_KEY=${SECRET_KEY}
+      - BASE_URL=https://nfchealthcare.ddns.net
+      - FRONTEND_URL=https://nfchealthcare.ddns.net
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - API_KEY=${API_KEY}
+      - API_SECRET=${API_SECRET}
+      - DDI_SERVICE_URL=http://ai_model:8000
+      - CHATBOT_SERVICE_URL=http://chatbot:8001
     restart: always
     networks:
       - smart_network
@@ -18,9 +25,12 @@ services:
       context: .
       dockerfile: Dockerfile.chatbot
     environment:
-      - MONGO_URI=mongodb+srv://bodytarek2003_db_user:bPzJxGCug6LhNKxl@cluster0.qkbfket.mongodb.net/nfc-healthcare?appName=Cluster0
+      - MONGO_URI=${MONGO_URI}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
       - SPEECHMATICS_API_KEY=${SPEECHMATICS_API_KEY}
+      - CHATBOT_GROQ_MODEL=${CHATBOT_GROQ_MODEL}
+      - CHAT_COLLECTION=${CHAT_COLLECTION}
       - DDI_SERVICE_URL=http://ai_model:8000
     expose:
       - "8001"
@@ -33,7 +43,7 @@ services:
       context: .
       dockerfile: Dockerfile.ai
     environment:
-      - MONGO_URI=mongodb+srv://bodytarek2003_db_user:bPzJxGCug6LhNKxl@cluster0.qkbfket.mongodb.net/nfc-healthcare?appName=Cluster0
+      - MONGO_URI=${MONGO_URI}
       - DDI_GROQ_API_KEY=${DDI_GROQ_API_KEY}
     expose:
       - "8000"
@@ -44,6 +54,7 @@ services:
   frontend:
     build:
       context: ./vite-frontend
+      dockerfile: Dockerfile
     restart: always
     networks:
       - smart_network
