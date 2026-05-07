@@ -16,6 +16,7 @@ services:
       - API_SECRET=${API_SECRET}
       - DDI_SERVICE_URL=http://ai_model:8000
       - CHATBOT_SERVICE_URL=http://chatbot:8001
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     restart: always
     networks:
       - smart_network
@@ -30,10 +31,17 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - SPEECHMATICS_API_KEY=${SPEECHMATICS_API_KEY}
       - CHATBOT_GROQ_MODEL=${CHATBOT_GROQ_MODEL:-gemini-2.5-flash}
-      - CHAT_COLLECTION=${CHAT_COLLECTION}
+      - CHAT_COLLECTION=${CHAT_COLLECTION:-patient_chat_logs}
       - DDI_SERVICE_URL=http://ai_model:8000
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     expose:
       - "8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     restart: always
     networks:
       - smart_network
@@ -47,6 +55,12 @@ services:
       - DDI_GROQ_API_KEY=${DDI_GROQ_API_KEY}
     expose:
       - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     restart: always
     networks:
       - smart_network
@@ -69,10 +83,14 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      - backend
-      - ai_model
-      - chatbot
-      - frontend
+      backend:
+        condition: service_started
+      ai_model:
+        condition: service_healthy
+      chatbot:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     restart: always
     networks:
       - smart_network

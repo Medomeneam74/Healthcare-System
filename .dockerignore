@@ -5,5 +5,4 @@ venv
 .git
 vite-frontend/node_modules
 vite-frontend/dist
-*.txt
 *.log

@@ -366,6 +366,36 @@ export const dispensePrescription = async (req, res, next) => {
     });
 };
 
+export const cancelPrescription = async (req, res, next) => {
+    const { id } = req.params;
+    const hospitalId = req.authUser.hospitalId;
+
+    const prescription = await Prescription.findById(id);
+    if (!prescription) {
+        return next(new AppError(messages.prescription.notExist, 404));
+    }
+
+    if (prescription.hospitalId.toString() !== hospitalId.toString()) {
+        return next(new AppError(messages.user.unauthorized, 403));
+    }
+
+    if (prescription.status === "cancelled") {
+        return next(new AppError(messages.prescription.alreadyCancelled, 400));
+    }
+    if (prescription.status === "dispensed") {
+        return next(new AppError(messages.prescription.alreadyDispensed, 400));
+    }
+
+    prescription.status = "cancelled";
+    const updated = await prescription.save();
+
+    return res.status(200).json({
+        success: true,
+        message: messages.prescription.cancelledSuccessfully,
+        data: updated,
+    });
+};
+
 export const getPrescriptionHistory = async (req, res, next) => {
     const { patientId } = req.params;
     const hospitalId = req.authUser.hospitalId;

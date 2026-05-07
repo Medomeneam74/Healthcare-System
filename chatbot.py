@@ -5,7 +5,8 @@ STT: Speechmatics Arabic (enhanced) — best accuracy for Egyptian Arabic dialec
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -22,7 +23,6 @@ import tempfile
 import subprocess
 import requests as _req
 from datetime import datetime, date, timezone
-from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -39,12 +39,16 @@ CHATBOT_GROQ_MODEL      = os.getenv("CHATBOT_GROQ_MODEL", "gemini-2.5-flash")
 CHAT_COLLECTION         = os.getenv("CHAT_COLLECTION", "patient_chat_logs")
 DDI_SERVICE_URL         = os.getenv("DDI_SERVICE_URL", "http://localhost:8000")
 SPEECHMATICS_URL        = "https://asr.api.speechmatics.com/v2"
-GROQ_API_KEY            = os.getenv("GROQ_API_KEY")
+INTERNAL_API_KEY        = (os.getenv("INTERNAL_API_KEY") or "").strip() or None
 
 if not GEMINI_API_KEY:
     logger.warning("GEMINI_API_KEY not set — chatbot will not function")
 if not SPEECHMATICS_API_KEY:
     logger.warning("SPEECHMATICS_API_KEY not set — speech-to-text will not function")
+if INTERNAL_API_KEY:
+    logger.info("Internal API key loaded (%d chars)", len(INTERNAL_API_KEY))
+else:
+    logger.warning("INTERNAL_API_KEY not set — /chat and /speech-to-text are unprotected")
 
 groq_client = OpenAI(
     api_key=GEMINI_API_KEY,
@@ -53,6 +57,16 @@ groq_client = OpenAI(
 
 mongo_client = None
 db = None
+
+# ── Internal API key auth ─────────────────────────────────────────────────────
+_api_key_header = APIKeyHeader(name="X-Internal-Key", auto_error=False)
+
+async def require_internal_key(key: Optional[str] = Depends(_api_key_header)):
+    if INTERNAL_API_KEY:
+        received = (key or "").strip()
+        if received != INTERNAL_API_KEY:
+            logger.warning("Auth failed — received key length %d, expected %d", len(received), len(INTERNAL_API_KEY))
+            raise HTTPException(status_code=401, detail="Unauthorized")
 
 # ── Hospital cache (5-minute TTL) ─────────────────────────────────────────────
 _hospital_cache: list = []
@@ -135,11 +149,14 @@ _DDI_PATTERNS = re.compile(
 
 
 def _parse_med_string(med_str: str) -> dict:
-    parts = med_str.split(" for ")
-    tokens = parts[0].strip().split()
-    name = tokens[0] if tokens else med_str
-    dosage = " ".join(tokens[1:]) if len(tokens) > 1 else "unknown"
-    return {"name": name, "dosage": dosage or "unknown", "frequency": "unknown", "notes": ""}
+    parts = med_str.split(" for ", 1)
+    duration = parts[1].strip() if len(parts) > 1 else ""
+    tokens = parts[0].strip().rsplit(" ", 1)
+    if len(tokens) == 2 and any(c.isdigit() for c in tokens[1]):
+        name, dosage = tokens[0], tokens[1]
+    else:
+        name, dosage = parts[0].strip(), "unknown"
+    return {"name": name, "dosage": dosage, "frequency": duration or "unknown", "notes": ""}
 
 
 async def _extract_drug_name(message: str) -> Optional[str]:
@@ -174,8 +191,6 @@ async def _extract_drug_name(message: str) -> Optional[str]:
 
 
 async def _call_ddi_service(patient_data: dict, new_drug: str) -> Optional[dict]:
-    import requests as _req
-
     current_treatments = [
         _parse_med_string(m) for m in patient_data.get("medications", []) if m
     ]
@@ -184,7 +199,7 @@ async def _call_ddi_service(patient_data: dict, new_drug: str) -> Optional[dict]
         "patient": {
             "id": None,
             "name": patient_data.get("name", "Patient"),
-            "age": patient_data.get("age") or 30,
+            "age": patient_data.get("age") if patient_data.get("age") is not None else 30,
             "current_treatments": current_treatments,
         },
         "new_treatment": {
@@ -260,8 +275,43 @@ async def _simplify_ddi(ddi: dict, patient_data: dict, new_drug: str, user_messa
         f"Known interactions: {'; '.join(ddi.get('interactions', []))}"
     )
 
-    patient_name = patient_data.get("name", "المريض")
-    current_meds = "، ".join(patient_data.get("medications", [])) or "لا يوجد أدوية مسجلة"
+    patient_name = patient_data.get("name", "the patient" if not arabic else "المريض")
+    current_meds = (
+        ("، ".join(patient_data.get("medications", [])) or "لا يوجد أدوية مسجلة")
+        if arabic else
+        (", ".join(patient_data.get("medications", [])) or "none on record")
+    )
+
+    if arabic:
+        system_prompt = (
+            f"أنت مساعد طبي بتشرح نتيجة فحص تفاعل الأدوية.\n"
+            f"اسم المريض: {patient_name} — ناديه باسمه بس من غير ألقاب أو مدام أو حاجة زي كده.\n"
+            f"أدويته الحالية: {current_meds}.\n\n"
+            "قواعد:\n"
+            "- رد باللهجة المصرية البسيطة فقط، متستخدمش إنجليزي إلا في أسماء الأدوية\n"
+            "- لو في تفاعل: اشرح الخطر ببساطة (ليه بيحصل وإيه الضرر)\n"
+            "- لو مفيش تفاعل: طمن المريض من غير ما تنصحه يراجع دكتور\n"
+            "- استخدم bullet points ورموز واضحة\n"
+            "- متتعدش 150 كلمة\n"
+            "- انصح بزيارة دكتور بس لو الخطورة متوسطة أو عالية\n"
+            "- متنصحش بوقف أي دواء حالي\n"
+        )
+        user_prompt = f"رسالة المريض: {user_message}\n\nاشرح النتيجة دي للمريض بلغة بسيطة:\n\n{tech_summary}"
+    else:
+        system_prompt = (
+            f"You are a medical assistant explaining a drug interaction check result.\n"
+            f"Patient name: {patient_name} — address them by first name only, no titles or honorifics.\n"
+            f"Current medications: {current_meds}.\n\n"
+            "Rules:\n"
+            "- Reply in plain English only\n"
+            "- If there is an interaction: explain the risk simply (why it happens and what harm it causes)\n"
+            "- If no interaction: reassure the patient without recommending a doctor visit\n"
+            "- Use bullet points and clear symbols\n"
+            "- Keep it under 150 words\n"
+            "- Recommend seeing a doctor only for moderate or high severity\n"
+            "- Never suggest stopping a current medication\n"
+        )
+        user_prompt = f"Patient message: {user_message}\n\nExplain this result to the patient in simple terms:\n\n{tech_summary}"
 
     try:
         loop = asyncio.get_running_loop()
@@ -270,20 +320,8 @@ async def _simplify_ddi(ddi: dict, patient_data: dict, new_drug: str, user_messa
             lambda: groq_client.chat.completions.create(
                 model=CHATBOT_GROQ_MODEL,
                 messages=[
-                    {"role": "system", "content": (
-                        f"أنت مساعد طبي بتشرح نتيجة فحص تفاعل الأدوية للمريض {patient_name}.\n"
-                        f"أدويته الحالية: {current_meds}.\n\n"
-                        "قواعد:\n"
-                        "- لو الرسالة بالعربي: رد باللهجة المصرية البسيطة فقط، متستخدمش إنجليزي إلا في أسماء الأدوية\n"
-                        "- لو الرسالة بالإنجليزي: رد بالإنجليزي\n"
-                        "- لو في تفاعل: اشرح الخطر ببساطة (ليه بيحصل وإيه الضرر)\n"
-                        "- لو مفيش تفاعل: طمن المريض من غير ما تنصحه يراجع دكتور\n"
-                        "- استخدم bullet points ورموز واضحة\n"
-                        "- متتعدش 150 كلمة\n"
-                        "- انصح بزيارة دكتور بس لو الخطورة متوسطة أو عالية\n"
-                        "- متنصحش بوقف أي دواء حالي\n"
-                    )},
-                    {"role": "user", "content": f"رسالة المريض: {user_message}\n\nاشرح النتيجة دي للمريض بلغة بسيطة:\n\n{tech_summary}"},
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.5,
                 max_tokens=4096,
@@ -361,28 +399,30 @@ async def fetch_patient_data(patient_id: str) -> dict:
         return {}
 
     oid = _try_oid(patient_id)
-    patient = None
-
     _exclude = {"emergencyContact": 0, "emergencyContacts": 0, "emergency_contact": 0}
 
-    if oid:
-        patient = await db.patients.find_one({"_id": oid}, _exclude)
-    if not patient:
-        patient = await db.patients.find_one(
+    async def _none():
+        return None
+
+    # Run both patient lookup strategies in parallel
+    oid_result, nat_result = await asyncio.gather(
+        db.patients.find_one({"_id": oid}, _exclude) if oid else _none(),
+        db.patients.find_one(
             {"$or": [{"nationalId": patient_id}, {"cardId": patient_id}]},
             _exclude,
-        )
+        ),
+    )
+    patient = oid_result or nat_result
 
     records = []
     if patient:
         pid = patient["_id"]
-        records = await db.medicalrecords.find(
-            {"patientId": pid}
-        ).sort("visitDate", -1).limit(5).to_list(length=5)
-        if not records:
-            records = await db.medicalrecords.find(
-                {"patientId": str(pid)}
-            ).sort("visitDate", -1).limit(5).to_list(length=5)
+        # Run both records lookup strategies in parallel (ObjectId vs string key)
+        oid_records, str_records = await asyncio.gather(
+            db.medicalrecords.find({"patientId": pid}).sort("visitDate", -1).limit(5).to_list(5),
+            db.medicalrecords.find({"patientId": str(pid)}).sort("visitDate", -1).limit(5).to_list(5),
+        )
+        records = oid_records or str_records
 
     if not patient and not records:
         return {}
@@ -505,9 +545,9 @@ def build_messages(patient_data: dict, history: List[dict], question: str, hospi
     no_history = "  لا يوجد" if arabic else "  None"
     no_chat    = "لا يوجد" if arabic else "None"
 
-    diseases        = "، ".join(patient_data.get("ChronicDiseases", [])) or none_val
-    medications     = "، ".join(patient_data.get("medications", []))     or none_val
-    surgeries       = "، ".join(patient_data.get("surgerys", []))        or none_val
+    diseases        = "، ".join(patient_data.get("diseases", []))    or none_val
+    medications     = "، ".join(patient_data.get("medications", [])) or none_val
+    surgeries       = "، ".join(patient_data.get("surgeries", []))   or none_val
     medical_history = "\n".join(
         f"  - {h}" for h in patient_data.get("medical_history", [])
     ) or no_history
@@ -601,7 +641,7 @@ def build_messages(patient_data: dict, history: List[dict], question: str, hospi
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 @app.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, _: None = Depends(require_internal_key)):
     if not groq_client:
         raise HTTPException(status_code=503, detail="CHATBOT_GROQ_API_KEY not configured")
     if not request.message.strip():
@@ -762,7 +802,7 @@ def _speechmatics_transcribe(audio_bytes: bytes, filename: str) -> str:
 
 
 @app.post("/speech-to-text")
-async def speech_to_text(audio: UploadFile = File(...)):
+async def speech_to_text(audio: UploadFile = File(...), _: None = Depends(require_internal_key)):
     if not SPEECHMATICS_API_KEY:
         raise HTTPException(status_code=503, detail="SPEECHMATICS_API_KEY not configured")
 

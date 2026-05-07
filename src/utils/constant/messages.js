@@ -78,6 +78,8 @@ export const messages = {
         dispensed: 'Prescription dispensed successfully',
         alreadyDispensed: 'Prescription has already been dispensed',
         cancelled: 'Cannot dispense a cancelled prescription',
+        cancelledSuccessfully: 'Prescription cancelled successfully',
+        alreadyCancelled: 'Prescription has already been cancelled',
         insufficientStock: 'Insufficient stock for',
     },
 }
