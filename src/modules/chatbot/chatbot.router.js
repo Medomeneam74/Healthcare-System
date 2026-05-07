@@ -74,9 +74,13 @@ chatbotRouter.post(
                 serviceAvailable: false,
             }).catch(err => console.error('[Chatbot] log save error:', err.message));
 
+            // Never forward 401/403 from internal services — the frontend
+            // treats those as session expiry and logs the user out.
+            const upstreamStatus = result.statusCode;
+            const safeStatus = (upstreamStatus === 401 || upstreamStatus === 403) ? 502 : (upstreamStatus || 502);
             return next(new AppError(
                 result.error || 'Chatbot service unavailable',
-                result.statusCode || 502
+                safeStatus
             ));
         }
 
@@ -180,7 +184,10 @@ chatbotRouter.post(
         let sttRes;
         try {
             sttRes = await axios.post(`${CHATBOT_URL}/speech-to-text`, formData, {
-                timeout: 60_000, // Whisper can take ~10-30 s for "base" model on CPU
+                timeout: 60_000,
+                headers: {
+                    ...(process.env.INTERNAL_API_KEY && { 'X-Internal-Key': process.env.INTERNAL_API_KEY }),
+                },
             });
         } catch (err) {
             if (err.code === 'ECONNREFUSED') {

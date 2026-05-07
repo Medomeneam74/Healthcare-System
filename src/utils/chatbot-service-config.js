@@ -3,9 +3,16 @@ import axios from 'axios';
 const chatbotClient = axios.create({
     baseURL: process.env.CHATBOT_SERVICE_URL || 'http://localhost:8001',
     timeout: 45000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
+});
+
+// Read the key at request time, not module load time
+chatbotClient.interceptors.request.use(config => {
+    const key = process.env.INTERNAL_API_KEY?.trim();
+    if (key) {
+        config.headers.set('X-Internal-Key', key);
+    }
+    return config;
 });
 
 export const callChatbotService = async (endpoint, method = 'POST', data = null) => {

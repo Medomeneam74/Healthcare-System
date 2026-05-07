@@ -11,6 +11,7 @@ import {
     createPrescription,
     getPendingPrescriptionsByPatient,
     dispensePrescription,
+    cancelPrescription,
     getPrescriptionHistory,
 } from "./pharmacy.controller.js";
 
@@ -81,6 +82,13 @@ pharmacyRouter.patch(
     isAuthenticated(),
     isAuthorized([roles.PHARMACIST]),
     asyncHandler(dispensePrescription)
+);
+
+pharmacyRouter.patch(
+    "/prescriptions/:id/cancel",
+    isAuthenticated(),
+    isAuthorized([roles.PHARMACIST]),
+    asyncHandler(cancelPrescription)
 );
 
 export default pharmacyRouter;

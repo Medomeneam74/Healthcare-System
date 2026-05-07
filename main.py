@@ -8,6 +8,7 @@ import requests
 import json
 import re
 import os
+from urllib.parse import quote
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -90,11 +91,23 @@ app.add_middleware(
 # Initialize Groq client - Use environment variable for API key
 GROQ_API_KEY = os.getenv("DDI_GROQ_API_KEY")
 if not GROQ_API_KEY:
-    print("⚠️  WARNING: DDI_GROQ_API_KEY not found in environment variables!")
-    print("   The DDI service will not function without a valid API key.")
-    print("   Please set DDI_GROQ_API_KEY in your .env file")
+    logger.warning("DDI_GROQ_API_KEY not set — DDI service will not function")
 
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+# ==================== HELPERS ====================
+
+def _get_with_retry(url, retries=2, timeout=3):
+    for attempt in range(retries + 1):
+        try:
+            r = requests.get(url, timeout=timeout)
+            if r.status_code == 200:
+                return r
+        except requests.exceptions.Timeout:
+            if attempt == retries:
+                return None
+            time.sleep(0.5)
+    return None
 
 # ==================== DRUG INFORMATION SERVICE ====================
 
@@ -123,13 +136,15 @@ class DrugInfoService:
         """Get RxCUI (unique identifier) for a drug from RxNorm"""
         try:
             url = f"{cls.RXNORM_BASE_URL}/rxcui.json?name={drug_name}"
-            response = requests.get(url, timeout=3)
+            response = _get_with_retry(url)
+            if response is None:
+                return None
             data = response.json()
             
             if 'idGroup' in data and 'rxnormId' in data['idGroup']:
                 return data['idGroup']['rxnormId'][0]
         except Exception as e:
-            print(f"RxNorm RxCUI Error: {e}")
+            logger.warning("RxNorm RxCUI error: %s", e)
         return None
     
     @classmethod
@@ -137,10 +152,10 @@ class DrugInfoService:
         """Get comprehensive drug info from OpenFDA"""
         try:
             clean_name = drug_name.strip().lower()
-            url = f"{cls.FDA_BASE_URL}?search=openfda.brand_name:\"{clean_name}\"+openfda.generic_name:\"{clean_name}\"&limit=1"
-            response = requests.get(url, timeout=3)
-            
-            if response.status_code == 200:
+            quoted_name = quote(clean_name)
+            url = f"{cls.FDA_BASE_URL}?search=openfda.brand_name:\"{quoted_name}\"+openfda.generic_name:\"{quoted_name}\"&limit=1"
+            response = _get_with_retry(url)
+            if response is not None:
                 data = response.json()
                 if 'results' in data and len(data['results']) > 0:
                     result = data['results'][0]
@@ -166,8 +181,8 @@ class DrugInfoService:
                         "route": result.get('openfda', {}).get('route', [None])[0] if result.get('openfda', {}).get('route') else None,
                     }
         except Exception as e:
-            print(f"FDA API Error for {drug_name}: {e}")
-        
+            logger.warning("FDA API error for %s: %s", drug_name, e)
+
         return None
     
     @classmethod
@@ -175,8 +190,8 @@ class DrugInfoService:
         """Get known drug interactions for a rxcui from RxNorm"""
         try:
             url = f"{cls.RXNORM_BASE_URL}/interaction/interaction.json?rxcui={rxcui}"
-            response = requests.get(url, timeout=3)
-            if response.status_code != 200:
+            response = _get_with_retry(url)
+            if response is None:
                 return None
             data = response.json()
             interactions = []
@@ -194,7 +209,7 @@ class DrugInfoService:
                         })
             return interactions if interactions else None
         except Exception as e:
-            print(f"RxNorm Interaction Error: {e}")
+            logger.warning("RxNorm interaction error: %s", e)
         return None
 
     @classmethod
@@ -276,20 +291,24 @@ async def analyze_conflict_with_ai(prompt: str, patient_age: int, num_treatments
         )
     
     # Call Groq API
-    completion = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an expert clinical pharmacist. Provide accurate, evidence-based analysis. Respond with valid JSON."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.2,
-        max_tokens=2000
+    loop = asyncio.get_running_loop()
+    completion = await loop.run_in_executor(
+        None,
+        lambda: client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert clinical pharmacist. Provide accurate, evidence-based analysis. Respond with valid JSON."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.2,
+            max_tokens=2000,
+        )
     )
     
     ai_response = completion.choices[0].message.content
@@ -406,6 +425,22 @@ Respond in JSON format:
             new_treatment_info=DrugInformation(**new_drug_info) if new_drug_info['has_data'] else None
         )
 
+        if db is not None:
+            try:
+                await db.conflict_analyses.insert_one({
+                    "patient_id":      request.patient.id,
+                    "patient_name":    request.patient.name,
+                    "new_drug":        request.new_treatment.name,
+                    "has_conflict":    response_obj.has_conflict,
+                    "severity":        response_obj.severity,
+                    "analysis":        response_obj.analysis,
+                    "recommendations": response_obj.recommendations,
+                    "interactions":    response_obj.interactions,
+                    "created_at":      datetime.utcnow(),
+                })
+            except Exception as e:
+                logger.warning("Failed to log analysis: %s", e)
+
         return response_obj
         
     except Exception as e:
@@ -413,10 +448,21 @@ Respond in JSON format:
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+# ==================== HEALTH ====================
+
+@app.get("/health")
+async def health():
+    return {
+        "status":    "ok",
+        "service":   "ddi-backend",
+        "port":      8000,
+        "llm_ready": client is not None,
+        "db_ready":  db is not None,
+    }
+
 # ==================== RUN SERVER ====================
 
 
 if __name__ == "__main__":
     import uvicorn
-    print("📦 Using MongoDB for conflict analysis logging")
     uvicorn.run(app, host="0.0.0.0", port=8000)
