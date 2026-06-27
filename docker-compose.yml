@@ -8,15 +8,15 @@ services:
       - PORT=3000
       - JWT_SECRET=${JWT_SECRET}
       - SECRET_KEY=${SECRET_KEY}
-      - BASE_URL=https://nfchealthcare.ddns.net
-      - FRONTEND_URL=https://nfchealthcare.ddns.net
+      - BASE_URL=https://healcare.ddns.net
+      - FRONTEND_URL=https://healcare.ddns.net
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
       - API_KEY=${API_KEY}
       - API_SECRET=${API_SECRET}
       - DDI_SERVICE_URL=http://ai_model:8000
       - CHATBOT_SERVICE_URL=http://chatbot:8001
-      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+
     restart: always
     networks:
       - smart_network
@@ -33,7 +33,7 @@ services:
       - CHATBOT_GROQ_MODEL=${CHATBOT_GROQ_MODEL:-gemini-2.5-flash}
       - CHAT_COLLECTION=${CHAT_COLLECTION:-patient_chat_logs}
       - DDI_SERVICE_URL=http://ai_model:8000
-      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+
     expose:
       - "8001"
     healthcheck:
